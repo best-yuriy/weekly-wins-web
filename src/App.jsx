@@ -1,15 +1,11 @@
-import { 
-  ThemeProvider, 
-  createTheme, 
-  Container, 
-} from '@mui/material'
-import CssBaseline from '@mui/material/CssBaseline'
-import MainPage from './pages/MainPage'
+import { ThemeProvider, createTheme, Container } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
+import MainPage from './pages/MainPage';
 const theme = createTheme({
   palette: {
     mode: 'light',
   },
-})
+});
 
 function App() {
   return (
@@ -19,7 +15,7 @@ function App() {
         <MainPage />
       </Container>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

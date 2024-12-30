@@ -1,0 +1,9 @@
+node_modules
+build
+dist
+coverage
+.next
+.vite
+.eslintcache
+.prettierrc
+.prettierignore
