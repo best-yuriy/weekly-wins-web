@@ -3,6 +3,10 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainPage from './pages/MainPage';
 import Login from './pages/Login';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import NavBar from './components/NavBar';
 
 const theme = createTheme({
   palette: {
@@ -11,10 +15,21 @@ const theme = createTheme({
 });
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
+        <NavBar user={user} />
         <Container maxWidth="sm">
           <Routes>
             <Route path="/" element={<MainPage />} />
