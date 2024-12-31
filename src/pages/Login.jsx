@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { auth } from '../firebase';
+import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,12 +9,21 @@ import {
   Alert,
   Paper,
 } from '@mui/material';
+import { getAuth } from 'firebase/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const auth = getAuth();
+
+  useEffect(() => {
+    // Redirect to home if user is already logged in
+    if (auth.currentUser) {
+      navigate('/');
+    }
+  }, [auth.currentUser, navigate]);
 
   const handleSubmit = async e => {
     e.preventDefault();

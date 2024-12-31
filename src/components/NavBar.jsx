@@ -35,10 +35,12 @@ function NavBar({ user = null }) {
 }
 
 NavBar.propTypes = {
-  user: PropTypes.shape({
-    uid: PropTypes.string,
-    // Add other user properties that you might use
-  }),
+  user: PropTypes.oneOfType([
+    PropTypes.shape({
+      uid: PropTypes.string.isRequired,
+    }),
+    PropTypes.oneOf([null]),
+  ]),
 };
 
 export default NavBar;
