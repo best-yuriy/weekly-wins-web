@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
@@ -83,39 +82,39 @@ const MainPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 2, sm: 3, md: 4 }}>
+      <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
         {goals.map(goal => (
           <Grid key={goal.id} size={1}>
-            <Card
+            <Paper
+              elevation={1}
               sx={{
                 cursor: 'pointer',
+                p: 2,
                 '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
               }}
               onClick={() => handleEditClick(goal)}
             >
-              <CardContent>
-                <Typography variant="h6">{goal.title}</Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography variant="h4">{goal.count}</Typography>
-                  {!isEditing && (
-                    <Button
-                      variant="contained"
-                      startIcon={<PlusOne />}
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleIncrement(goal.id);
-                      }}
-                    />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+              <Typography variant="h6">{goal.title}</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="h4">{goal.count}</Typography>
+                {!isEditing && (
+                  <Button
+                    variant="contained"
+                    startIcon={<PlusOne />}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleIncrement(goal.id);
+                    }}
+                  />
+                )}
+              </Box>
+            </Paper>
           </Grid>
         ))}
       </Grid>
