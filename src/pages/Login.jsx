@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -10,11 +9,16 @@ import {
   Paper,
 } from '@mui/material';
 import { getAuth } from 'firebase/auth';
+import {
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+} from 'firebase/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [isEmailLinkSent, setIsEmailLinkSent] = useState(false);
   const navigate = useNavigate();
   const auth = getAuth();
 
@@ -25,13 +29,41 @@ const Login = () => {
     }
   }, [auth.currentUser, navigate]);
 
+  useEffect(() => {
+    // Check if the user is accessing the page from an email link
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const savedEmail = window.localStorage.getItem('emailForSignIn');
+
+      if (savedEmail) {
+        signInWithEmailLink(auth, savedEmail, window.location.href)
+          .then(result => {
+            window.localStorage.removeItem('emailForSignIn');
+            // Check if it's a new user
+            if (result.additionalUserInfo?.isNewUser) {
+              console.log('New user signed up via email link');
+            }
+            navigate('/');
+          })
+          .catch(err => setError(err.message));
+      } else {
+        setError('Please provide your email again for confirmation');
+      }
+    }
+  }, [auth, navigate]);
+
   const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/');
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+        handleCodeInApp: true,
+      };
+
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      setIsEmailLinkSent(true);
     } catch (err) {
       setError(err.message);
     }
@@ -58,7 +90,7 @@ const Login = () => {
         }}
       >
         <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Login
+          Sign In
         </Typography>
 
         {error && <Alert severity="error">{error}</Alert>}
@@ -76,26 +108,21 @@ const Login = () => {
             value={email}
             onChange={e => setEmail(e.target.value)}
           />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            Sign In
-          </Button>
+
+          {!isEmailLinkSent ? (
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Send Sign In Link
+            </Button>
+          ) : (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Check your email for the sign-in link! You can close this window.
+            </Alert>
+          )}
         </Box>
       </Paper>
     </Box>
