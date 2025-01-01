@@ -11,27 +11,44 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import { Add, Edit, Check, PlusOne } from '@mui/icons-material';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import { getCurrentWeekKey, generateId } from '../utils/dateUtils';
+import PropTypes from 'prop-types';
 
-const MainPage = () => {
-  const [goals, setGoals] = useState([]);
+const MainPage = ({ initialGoals = {} }) => {
+  const [weeklyGoals, setWeeklyGoals] = useState(initialGoals);
+  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekKey());
   const [isEditing, setIsEditing] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [editingGoal, setEditingGoal] = useState(null);
 
+  const availableWeeks = Object.keys(weeklyGoals).sort().reverse();
+  if (!availableWeeks.includes(selectedWeek)) {
+    availableWeeks.unshift(selectedWeek);
+  }
+
   const handleAddGoal = () => {
     if (newGoalTitle.trim()) {
-      setGoals([...goals, { id: Date.now(), title: newGoalTitle, count: 0 }]);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: [
+          ...(prev[selectedWeek] || []),
+          { id: generateId(), title: newGoalTitle, count: 0 },
+        ],
+      }));
       setNewGoalTitle('');
     }
   };
 
   const handleIncrement = goalId => {
     if (!isEditing) {
-      setGoals(
-        goals.map(goal =>
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: prev[selectedWeek].map(goal =>
           goal.id === goalId ? { ...goal, count: goal.count + 1 } : goal
-        )
-      );
+        ),
+      }));
     }
   };
 
@@ -42,24 +59,47 @@ const MainPage = () => {
   };
 
   const handleUpdateGoal = updatedGoal => {
-    setGoals(
-      goals.map(goal => (goal.id === updatedGoal.id ? updatedGoal : goal))
-    );
+    setWeeklyGoals(prev => ({
+      ...prev,
+      [selectedWeek]: prev[selectedWeek].map(goal =>
+        goal.id === updatedGoal.id ? updatedGoal : goal
+      ),
+    }));
     setEditingGoal(null);
     setIsEditing(false);
   };
 
   const handleDeleteGoal = goalId => {
-    setGoals(goals.filter(goal => goal.id !== goalId));
+    setWeeklyGoals(prev => ({
+      ...prev,
+      [selectedWeek]: prev[selectedWeek].filter(goal => goal.id !== goalId),
+    }));
     setEditingGoal(null);
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Weekly Goals
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h4" component="h1">
+            Weekly Goals
+          </Typography>
+          <Select
+            value={selectedWeek}
+            onChange={e => setSelectedWeek(e.target.value)}
+            size="small"
+          >
+            {availableWeeks.map(week => (
+              <MenuItem key={week} value={week}>
+                {new Date(week + 'T00:00:00').toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
         <Button
           variant={isEditing ? 'contained' : 'outlined'}
           startIcon={isEditing ? <Check /> : <Edit />}
@@ -83,7 +123,7 @@ const MainPage = () => {
       </Box>
 
       <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
-        {goals.map(goal => (
+        {(weeklyGoals[selectedWeek] || []).map(goal => (
           <Grid key={goal.id} size={1}>
             <Paper
               elevation={1}
@@ -172,6 +212,18 @@ const MainPage = () => {
       </Dialog>
     </Container>
   );
+};
+
+MainPage.propTypes = {
+  initialGoals: PropTypes.objectOf(
+    PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        title: PropTypes.string.isRequired,
+        count: PropTypes.number.isRequired,
+      })
+    )
+  ),
 };
 
 export default MainPage;
