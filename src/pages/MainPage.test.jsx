@@ -1,7 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MainPage from './MainPage';
+
+// Mock the getCurrentWeekKey to return a consistent date
+vi.mock('../utils/dateUtils', async () => {
+  const actual = await vi.importActual('../utils/dateUtils');
+  return {
+    ...actual,
+    getCurrentWeekKey: () => '2024-03-25', // Monday
+  };
+});
 
 describe('MainPage', () => {
   it('renders the main page with title', () => {
@@ -91,5 +100,63 @@ describe('MainPage', () => {
     await userEvent.click(screen.getByText('Delete'));
 
     expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+  });
+
+  describe('week selector', () => {
+    it('shows current week by default', () => {
+      render(<MainPage />);
+      expect(screen.getByText('Mar 25, 2024')).toBeInTheDocument();
+    });
+
+    it('shows goals from initial data', () => {
+      const initialGoals = {
+        '2024-03-25': [{ id: '1', title: 'Current week goal', count: 0 }],
+      };
+
+      render(<MainPage initialGoals={initialGoals} />);
+      expect(screen.getByText('Current week goal')).toBeInTheDocument();
+    });
+
+    it('switches between weeks with existing goals', async () => {
+      const initialGoals = {
+        '2024-03-25': [{ id: '1', title: 'Current week goal', count: 0 }],
+        '2024-03-18': [{ id: '2', title: 'Previous week goal', count: 0 }],
+      };
+
+      render(<MainPage initialGoals={initialGoals} />);
+
+      // Initially shows current week
+      expect(screen.getByText('Current week goal')).toBeInTheDocument();
+      expect(screen.queryByText('Previous week goal')).not.toBeInTheDocument();
+
+      // Click the select to open it
+      await userEvent.click(screen.getByRole('combobox'));
+      // Click the option for the previous week
+      await userEvent.click(screen.getByText('Mar 18, 2024'));
+
+      // Shows previous week goals
+      expect(screen.queryByText('Current week goal')).not.toBeInTheDocument();
+      expect(screen.getByText('Previous week goal')).toBeInTheDocument();
+    });
+
+    it('maintains separate goal counts for different weeks', async () => {
+      const initialGoals = {
+        '2024-03-25': [{ id: '1', title: 'Goal', count: 1 }],
+        '2024-03-18': [{ id: '2', title: 'Goal', count: 2 }],
+      };
+
+      render(<MainPage initialGoals={initialGoals} />);
+
+      // Check current week count
+      expect(screen.getByText('1')).toBeInTheDocument();
+
+      // Click the select to open it
+      await userEvent.click(screen.getByRole('combobox'));
+      // Click the option for the previous week
+      await userEvent.click(screen.getByText('Mar 18, 2024'));
+
+      // Check previous week has different count
+      expect(screen.getByText('2')).toBeInTheDocument();
+    });
   });
 });
