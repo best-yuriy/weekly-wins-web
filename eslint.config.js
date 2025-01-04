@@ -9,11 +9,14 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 export default [
   { ignores: ['dist'] },
   eslintConfigPrettier,
+  // Default config for browser files
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
@@ -40,6 +43,7 @@ export default [
       'prettier/prettier': 'error',
     },
   },
+  // Regular test files get browser + jest globals
   {
     files: ['**/*.{test,spec}.{js,jsx}', '**/__tests__/**/*.{js,jsx}'],
     languageOptions: {
@@ -47,9 +51,22 @@ export default [
         ...globals.browser,
         ...globals.jest,
       },
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      ...react.configs['jsx-runtime'].rules,
+      ...reactHooks.configs.recommended.rules,
+    },
+  },
+  // Emulator test files get browser + jest + node globals
+  {
+    files: ['**/*.emulator.test.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest,
+        ...globals.node,
       },
     },
     rules: {
