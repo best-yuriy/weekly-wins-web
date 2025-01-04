@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to access only their own weeks collection
+    match /users/{userId}/weeks/{weekId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Default deny all - this should come last
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
