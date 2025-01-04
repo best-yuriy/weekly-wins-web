@@ -3,7 +3,13 @@ export function getCurrentWeekKey() {
   const day = now.getDay();
   const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
   const monday = new Date(now.setDate(diff));
-  return monday.toISOString().split('T')[0]; // formats as YYYY-MM-DD
+  return (
+    monday.getFullYear() +
+    '-' +
+    String(monday.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(monday.getDate()).padStart(2, '0')
+  );
 }
 
 /**
