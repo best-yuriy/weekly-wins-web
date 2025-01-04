@@ -37,6 +37,26 @@ describe('getCurrentWeekKey', () => {
     expect(getCurrentWeekKey()).toBe('2024-03-25');
   });
 
+  it('returns consistent Monday when called near midnight', () => {
+    // Wednesday 11:50 PM
+    // Note: months are 0-based (0-11)
+    const lateNightDate = new Date(2024, 2, 20, 23, 50, 0);
+    expect(lateNightDate.getDay()).toBe(3);
+    vi.setSystemTime(lateNightDate);
+    const lateNightResult = getCurrentWeekKey();
+
+    // Thursday 12:10 AM (next day)
+    // Note: months are 0-based (0-11)
+    const earlyMorningDate = new Date(2024, 2, 21, 0, 10, 0);
+    expect(earlyMorningDate.getDay()).toBe(4);
+    vi.setSystemTime(earlyMorningDate);
+    const earlyMorningResult = getCurrentWeekKey();
+
+    // Both should return the same Monday
+    expect(lateNightResult).toBe('2024-03-18');
+    expect(earlyMorningResult).toBe('2024-03-18');
+  });
+
   afterEach(() => {
     vi.useRealTimers();
   });
