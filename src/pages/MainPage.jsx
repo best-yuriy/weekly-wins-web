@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
@@ -12,27 +11,95 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import { Add, Edit, Check, PlusOne } from '@mui/icons-material';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import { getCurrentWeekKey } from '../utils/dateUtils';
+import PropTypes from 'prop-types';
+import FirestoreGoalsService from '../services/goals/FirestoreGoalsService';
 
-const MainPage = () => {
-  const [goals, setGoals] = useState([]);
+// Create default instance
+const defaultService = new FirestoreGoalsService();
+
+const MainPage = ({
+  goalsService = defaultService, // Add service as a prop with default
+}) => {
+  const [weeklyGoals, setWeeklyGoals] = useState({});
+  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekKey());
+  const [availableWeeks, setAvailableWeeks] = useState([selectedWeek]);
   const [isEditing, setIsEditing] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [editingGoal, setEditingGoal] = useState(null);
 
-  const handleAddGoal = () => {
+  // Load available weeks
+  useEffect(() => {
+    const loadWeeks = async () => {
+      try {
+        const weeks = await goalsService.getAvailableWeeks();
+        const currentWeek = getCurrentWeekKey();
+        if (!weeks.includes(currentWeek)) {
+          weeks.unshift(currentWeek);
+        }
+        setAvailableWeeks(weeks);
+      } catch (error) {
+        console.error('Failed to load weeks:', error);
+      }
+    };
+    loadWeeks();
+  }, [goalsService]);
+
+  // Load goals for selected week
+  useEffect(() => {
+    const loadGoals = async () => {
+      try {
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+      } catch (error) {
+        console.error('Failed to load goals:', error);
+      }
+    };
+    loadGoals();
+  }, [goalsService, selectedWeek]);
+
+  const handleAddGoal = async () => {
     if (newGoalTitle.trim()) {
-      setGoals([...goals, { id: Date.now(), title: newGoalTitle, count: 0 }]);
-      setNewGoalTitle('');
+      try {
+        await goalsService.addGoal(selectedWeek, {
+          title: newGoalTitle,
+          count: 0,
+        });
+
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+        setNewGoalTitle('');
+      } catch (error) {
+        console.error('Failed to add goal:', error);
+      }
     }
   };
 
-  const handleIncrement = goalId => {
+  const handleIncrement = async goalId => {
     if (!isEditing) {
-      setGoals(
-        goals.map(goal =>
-          goal.id === goalId ? { ...goal, count: goal.count + 1 } : goal
-        )
-      );
+      try {
+        const goal = weeklyGoals[selectedWeek].find(g => g.id === goalId);
+        await goalsService.updateGoal(selectedWeek, {
+          ...goal,
+          count: goal.count + 1,
+        });
+
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+      } catch (error) {
+        console.error('Failed to increment goal:', error);
+      }
     }
   };
 
@@ -42,25 +109,58 @@ const MainPage = () => {
     }
   };
 
-  const handleUpdateGoal = updatedGoal => {
-    setGoals(
-      goals.map(goal => (goal.id === updatedGoal.id ? updatedGoal : goal))
-    );
-    setEditingGoal(null);
-    setIsEditing(false);
+  const handleUpdateGoal = async updatedGoal => {
+    try {
+      await goalsService.updateGoal(selectedWeek, updatedGoal);
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+      setEditingGoal(null);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update goal:', error);
+    }
   };
 
-  const handleDeleteGoal = goalId => {
-    setGoals(goals.filter(goal => goal.id !== goalId));
-    setEditingGoal(null);
+  const handleDeleteGoal = async goalId => {
+    try {
+      await goalsService.deleteGoal(selectedWeek, goalId);
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+      setEditingGoal(null);
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+    }
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Weekly Goals
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h4" component="h1">
+            Weekly Goals
+          </Typography>
+          <Select
+            value={selectedWeek}
+            onChange={e => setSelectedWeek(e.target.value)}
+            size="small"
+          >
+            {availableWeeks.map(week => (
+              <MenuItem key={week} value={week}>
+                {new Date(week + 'T00:00:00').toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
         <Button
           variant={isEditing ? 'contained' : 'outlined'}
           startIcon={isEditing ? <Check /> : <Edit />}
@@ -83,39 +183,39 @@ const MainPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 2, sm: 3, md: 4 }}>
-        {goals.map(goal => (
+      <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
+        {(weeklyGoals[selectedWeek] || []).map(goal => (
           <Grid key={goal.id} size={1}>
-            <Card
+            <Paper
+              elevation={1}
               sx={{
                 cursor: 'pointer',
+                p: 2,
                 '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
               }}
               onClick={() => handleEditClick(goal)}
             >
-              <CardContent>
-                <Typography variant="h6">{goal.title}</Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography variant="h4">{goal.count}</Typography>
-                  {!isEditing && (
-                    <Button
-                      variant="contained"
-                      startIcon={<PlusOne />}
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleIncrement(goal.id);
-                      }}
-                    />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+              <Typography variant="h6">{goal.title}</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="h4">{goal.count}</Typography>
+                {!isEditing && (
+                  <Button
+                    variant="contained"
+                    startIcon={<PlusOne />}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleIncrement(goal.id);
+                    }}
+                  />
+                )}
+              </Box>
+            </Paper>
           </Grid>
         ))}
       </Grid>
@@ -173,6 +273,16 @@ const MainPage = () => {
       </Dialog>
     </Container>
   );
+};
+
+MainPage.propTypes = {
+  goalsService: PropTypes.shape({
+    getWeeklyGoals: PropTypes.func.isRequired,
+    addGoal: PropTypes.func.isRequired,
+    updateGoal: PropTypes.func.isRequired,
+    deleteGoal: PropTypes.func.isRequired,
+    getAvailableWeeks: PropTypes.func.isRequired,
+  }),
 };
 
 export default MainPage;
