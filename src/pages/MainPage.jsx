@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
@@ -13,42 +13,93 @@ import Grid from '@mui/material/Grid2';
 import { Add, Edit, Check, PlusOne } from '@mui/icons-material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import { getCurrentWeekKey, generateId } from '../utils/dateUtils';
+import { getCurrentWeekKey } from '../utils/dateUtils';
 import PropTypes from 'prop-types';
+import FirestoreGoalsService from '../services/goals/FirestoreGoalsService';
 
-const MainPage = ({ initialGoals = {} }) => {
-  const [weeklyGoals, setWeeklyGoals] = useState(initialGoals);
+// Create default instance
+const defaultService = new FirestoreGoalsService();
+
+const MainPage = ({
+  goalsService = defaultService, // Add service as a prop with default
+}) => {
+  const [weeklyGoals, setWeeklyGoals] = useState({});
   const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekKey());
+  const [availableWeeks, setAvailableWeeks] = useState([selectedWeek]);
   const [isEditing, setIsEditing] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [editingGoal, setEditingGoal] = useState(null);
 
-  const availableWeeks = Object.keys(weeklyGoals).sort().reverse();
-  if (!availableWeeks.includes(selectedWeek)) {
-    availableWeeks.unshift(selectedWeek);
-  }
+  // Load available weeks
+  useEffect(() => {
+    const loadWeeks = async () => {
+      try {
+        const weeks = await goalsService.getAvailableWeeks();
+        const currentWeek = getCurrentWeekKey();
+        if (!weeks.includes(currentWeek)) {
+          weeks.unshift(currentWeek);
+        }
+        setAvailableWeeks(weeks);
+      } catch (error) {
+        console.error('Failed to load weeks:', error);
+      }
+    };
+    loadWeeks();
+  }, [goalsService]);
 
-  const handleAddGoal = () => {
+  // Load goals for selected week
+  useEffect(() => {
+    const loadGoals = async () => {
+      try {
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+      } catch (error) {
+        console.error('Failed to load goals:', error);
+      }
+    };
+    loadGoals();
+  }, [goalsService, selectedWeek]);
+
+  const handleAddGoal = async () => {
     if (newGoalTitle.trim()) {
-      setWeeklyGoals(prev => ({
-        ...prev,
-        [selectedWeek]: [
-          ...(prev[selectedWeek] || []),
-          { id: generateId(), title: newGoalTitle, count: 0 },
-        ],
-      }));
-      setNewGoalTitle('');
+      try {
+        await goalsService.addGoal(selectedWeek, {
+          title: newGoalTitle,
+          count: 0,
+        });
+
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+        setNewGoalTitle('');
+      } catch (error) {
+        console.error('Failed to add goal:', error);
+      }
     }
   };
 
-  const handleIncrement = goalId => {
+  const handleIncrement = async goalId => {
     if (!isEditing) {
-      setWeeklyGoals(prev => ({
-        ...prev,
-        [selectedWeek]: prev[selectedWeek].map(goal =>
-          goal.id === goalId ? { ...goal, count: goal.count + 1 } : goal
-        ),
-      }));
+      try {
+        const goal = weeklyGoals[selectedWeek].find(g => g.id === goalId);
+        await goalsService.updateGoal(selectedWeek, {
+          ...goal,
+          count: goal.count + 1,
+        });
+
+        const goals = await goalsService.getWeeklyGoals(selectedWeek);
+        setWeeklyGoals(prev => ({
+          ...prev,
+          [selectedWeek]: goals,
+        }));
+      } catch (error) {
+        console.error('Failed to increment goal:', error);
+      }
     }
   };
 
@@ -58,23 +109,33 @@ const MainPage = ({ initialGoals = {} }) => {
     }
   };
 
-  const handleUpdateGoal = updatedGoal => {
-    setWeeklyGoals(prev => ({
-      ...prev,
-      [selectedWeek]: prev[selectedWeek].map(goal =>
-        goal.id === updatedGoal.id ? updatedGoal : goal
-      ),
-    }));
-    setEditingGoal(null);
-    setIsEditing(false);
+  const handleUpdateGoal = async updatedGoal => {
+    try {
+      await goalsService.updateGoal(selectedWeek, updatedGoal);
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+      setEditingGoal(null);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update goal:', error);
+    }
   };
 
-  const handleDeleteGoal = goalId => {
-    setWeeklyGoals(prev => ({
-      ...prev,
-      [selectedWeek]: prev[selectedWeek].filter(goal => goal.id !== goalId),
-    }));
-    setEditingGoal(null);
+  const handleDeleteGoal = async goalId => {
+    try {
+      await goalsService.deleteGoal(selectedWeek, goalId);
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+      setEditingGoal(null);
+    } catch (error) {
+      console.error('Failed to delete goal:', error);
+    }
   };
 
   return (
@@ -215,15 +276,13 @@ const MainPage = ({ initialGoals = {} }) => {
 };
 
 MainPage.propTypes = {
-  initialGoals: PropTypes.objectOf(
-    PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        title: PropTypes.string.isRequired,
-        count: PropTypes.number.isRequired,
-      })
-    )
-  ),
+  goalsService: PropTypes.shape({
+    getWeeklyGoals: PropTypes.func.isRequired,
+    addGoal: PropTypes.func.isRequired,
+    updateGoal: PropTypes.func.isRequired,
+    deleteGoal: PropTypes.func.isRequired,
+    getAvailableWeeks: PropTypes.func.isRequired,
+  }),
 };
 
 export default MainPage;
