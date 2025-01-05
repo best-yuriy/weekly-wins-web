@@ -41,6 +41,7 @@ jobs:
         run: |
           gh pr create \
             --title "chore: bump version to ${{ env.NEW_VERSION }}" \
+            --body "Automated version bump to ${{ env.NEW_VERSION }}" \
             --base main \
             --head ${{ env.branch_name }}
         env:
