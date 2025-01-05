@@ -37,6 +37,12 @@ jobs:
           echo "branch_name=$branch_name" >> $GITHUB_ENV
           git push origin $branch_name --follow-tags
 
+      - name: Debug Git State
+        run: |
+          echo "Current branch: $(git branch --show-current)"
+          echo "Latest commit: $(git log -1 --oneline)"
+          echo "Diff with main: $(git diff main)"
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
