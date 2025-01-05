@@ -158,6 +158,7 @@ const MainPage = ({
         [selectedWeek]: goals,
       }));
       setEditingGoal(null);
+      setIsEditing(false);
     } catch (error) {
       console.error('Failed to delete goal:', error);
     } finally {

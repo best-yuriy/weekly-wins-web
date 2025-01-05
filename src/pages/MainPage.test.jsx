@@ -107,7 +107,7 @@ describe('MainPage', () => {
     expect(screen.getByText('Updated Goal')).toBeInTheDocument();
   });
 
-  it('deletes a goal', async () => {
+  it('deletes a goal and exits edit mode', async () => {
     const service = new InMemoryGoalsService();
     await service.addGoal('2024-03-25', testGoal);
 
@@ -120,7 +120,13 @@ describe('MainPage', () => {
     // Delete the goal
     await userEvent.click(screen.getByText('Delete'));
 
-    expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+    await waitFor(() => {
+      // Check that the goal is deleted
+      expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+      // Check that we're back in non-edit mode (Edit button is visible)
+      expect(screen.getByText('Edit')).toBeInTheDocument();
+      expect(screen.queryByText('Done')).not.toBeInTheDocument();
+    });
   });
 
   describe('week selector', () => {
