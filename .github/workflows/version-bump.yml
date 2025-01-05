@@ -34,6 +34,7 @@ jobs:
           git checkout -b $branch_name
           NEW_VERSION=$(npm version ${{ inputs.version_type }} -m "Bump version to %s")
           echo "NEW_VERSION=${NEW_VERSION#v}" >> $GITHUB_ENV
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
           git push origin $branch_name --follow-tags
 
       - name: Create Pull Request
