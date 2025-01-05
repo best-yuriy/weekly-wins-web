@@ -23,11 +23,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Git
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'github-actions@users.noreply.github.com'
-
       - name: Create version bump branch
         run: |
           branch_name="version-bump/$(date +%Y%m%d-%H%M%S)"
@@ -37,15 +32,11 @@ jobs:
           echo "branch_name=$branch_name" >> $GITHUB_ENV
           git push origin $branch_name --follow-tags
 
-      - name: Debug Git State
-        run: |
-          echo "Current branch: $(git branch --show-current)"
-          echo "Latest commit: $(git log -1 --oneline)"
-          echo "Diff with main: $(git diff main)"
-
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          title: 'chore: bump version to ${{ env.NEW_VERSION }}'
-          branch: ${{ env.branch_name }}
-          base: main
+        run: |
+          gh pr create \
+            --title "chore: bump version to ${{ env.NEW_VERSION }}" \
+            --base main \
+            --head ${{ env.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
