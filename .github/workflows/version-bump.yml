@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
       - name: Create version bump branch
         run: |
           branch_name="version-bump/$(date +%Y%m%d-%H%M%S)"
