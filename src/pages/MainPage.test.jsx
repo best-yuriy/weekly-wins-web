@@ -320,4 +320,148 @@ describe('MainPage', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('loading states', () => {
+    it('shows loading state when adding a goal', async () => {
+      const service = new InMemoryGoalsService();
+      render(<MainPage goalsService={service} />);
+
+      const input = screen.getByPlaceholderText('Enter new goal');
+      const addButton = screen.getByText('Add');
+
+      await userEvent.type(input, 'Test Goal');
+
+      service._getBarrier('addGoal');
+      const addPromise = userEvent.click(addButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(addButton).toBeDisabled();
+      });
+
+      service.resolveOperation('addGoal');
+      await addPromise;
+
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(addButton).not.toBeDisabled();
+      });
+    });
+
+    it('shows loading state when updating a goal', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', testGoal);
+
+      render(<MainPage goalsService={service} />);
+
+      // Enter edit mode and click the goal
+      await userEvent.click(screen.getByText('Edit'));
+      await userEvent.click(screen.getByText('Test Goal'));
+
+      const saveButton = screen.getByText('Save');
+
+      service._getBarrier('updateGoal');
+      const updatePromise = userEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(saveButton).toBeDisabled();
+      });
+
+      service.resolveOperation('updateGoal');
+      await updatePromise;
+
+      // Wait for all updates to complete
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows loading state when deleting a goal', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', testGoal);
+
+      render(<MainPage goalsService={service} />);
+
+      // Enter edit mode and click the goal
+      await userEvent.click(screen.getByText('Edit'));
+      await userEvent.click(screen.getByText('Test Goal'));
+
+      const deleteButton = screen.getByText('Delete');
+
+      service._getBarrier('deleteGoal');
+      const deletePromise = userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(deleteButton).toBeDisabled();
+      });
+
+      service.resolveOperation('deleteGoal');
+      await deletePromise;
+
+      // Wait for all updates to complete
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows loading state when incrementing a goal', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', testGoal);
+
+      render(<MainPage goalsService={service} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Goal')).toBeInTheDocument();
+      });
+
+      const plusButton = screen.getByTestId('PlusOneIcon').closest('button');
+
+      service._getBarrier('updateGoal');
+      const incrementPromise = userEvent.click(plusButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(plusButton).toBeDisabled();
+      });
+
+      service.resolveOperation('updateGoal');
+      await incrementPromise;
+
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(plusButton).not.toBeDisabled();
+      });
+    });
+
+    it('shows loading state when initially loading goals', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', testGoal);
+
+      // Set up barrier before rendering
+      service._getBarrier('getWeeklyGoals');
+
+      render(<MainPage goalsService={service} />);
+
+      // Check loading state
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+      });
+
+      // Complete the operation
+      service.resolveOperation('getWeeklyGoals');
+
+      // Wait for goals to appear
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(screen.getByText('Test Goal')).toBeInTheDocument();
+        expect(screen.getByText('0')).toBeInTheDocument();
+      });
+    });
+  });
 });
