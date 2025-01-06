@@ -16,6 +16,7 @@ import Select from '@mui/material/Select';
 import { getCurrentWeekKey } from '../utils/dateUtils';
 import PropTypes from 'prop-types';
 import FirestoreGoalsService from '../services/goals/FirestoreGoalsService';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -29,10 +30,19 @@ const MainPage = ({
   const [isEditing, setIsEditing] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [editingGoal, setEditingGoal] = useState(null);
+  const [isLoading, setIsLoading] = useState({
+    weeks: false,
+    goals: false,
+    addGoal: false,
+    updateGoal: false,
+    incrementGoal: false,
+    deleteGoal: false,
+  });
 
   // Load available weeks
   useEffect(() => {
     const loadWeeks = async () => {
+      setIsLoading(prev => ({ ...prev, weeks: true }));
       try {
         const weeks = await goalsService.getAvailableWeeks();
         const currentWeek = getCurrentWeekKey();
@@ -42,6 +52,8 @@ const MainPage = ({
         setAvailableWeeks(weeks);
       } catch (error) {
         console.error('Failed to load weeks:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, weeks: false }));
       }
     };
     loadWeeks();
@@ -50,6 +62,7 @@ const MainPage = ({
   // Load goals for selected week
   useEffect(() => {
     const loadGoals = async () => {
+      setIsLoading(prev => ({ ...prev, goals: true }));
       try {
         const goals = await goalsService.getWeeklyGoals(selectedWeek);
         setWeeklyGoals(prev => ({
@@ -58,6 +71,8 @@ const MainPage = ({
         }));
       } catch (error) {
         console.error('Failed to load goals:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, goals: false }));
       }
     };
     loadGoals();
@@ -65,6 +80,7 @@ const MainPage = ({
 
   const handleAddGoal = async () => {
     if (newGoalTitle.trim()) {
+      setIsLoading(prev => ({ ...prev, addGoal: true }));
       try {
         await goalsService.addGoal(selectedWeek, {
           title: newGoalTitle,
@@ -79,12 +95,15 @@ const MainPage = ({
         setNewGoalTitle('');
       } catch (error) {
         console.error('Failed to add goal:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, addGoal: false }));
       }
     }
   };
 
   const handleIncrement = async goalId => {
     if (!isEditing) {
+      setIsLoading(prev => ({ ...prev, incrementGoal: true }));
       try {
         const goal = weeklyGoals[selectedWeek].find(g => g.id === goalId);
         await goalsService.updateGoal(selectedWeek, {
@@ -99,6 +118,8 @@ const MainPage = ({
         }));
       } catch (error) {
         console.error('Failed to increment goal:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, incrementGoal: false }));
       }
     }
   };
@@ -110,6 +131,7 @@ const MainPage = ({
   };
 
   const handleUpdateGoal = async updatedGoal => {
+    setIsLoading(prev => ({ ...prev, updateGoal: true }));
     try {
       await goalsService.updateGoal(selectedWeek, updatedGoal);
       const goals = await goalsService.getWeeklyGoals(selectedWeek);
@@ -121,10 +143,13 @@ const MainPage = ({
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update goal:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, updateGoal: false }));
     }
   };
 
   const handleDeleteGoal = async goalId => {
+    setIsLoading(prev => ({ ...prev, deleteGoal: true }));
     try {
       await goalsService.deleteGoal(selectedWeek, goalId);
       const goals = await goalsService.getWeeklyGoals(selectedWeek);
@@ -133,8 +158,11 @@ const MainPage = ({
         [selectedWeek]: goals,
       }));
       setEditingGoal(null);
+      setIsEditing(false);
     } catch (error) {
       console.error('Failed to delete goal:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, deleteGoal: false }));
     }
   };
 
@@ -177,48 +205,69 @@ const MainPage = ({
           value={newGoalTitle}
           onChange={e => setNewGoalTitle(e.target.value)}
           onKeyUp={e => e.key === 'Enter' && handleAddGoal()}
+          disabled={isLoading.addGoal}
         />
-        <Button variant="contained" startIcon={<Add />} onClick={handleAddGoal}>
+        <Button
+          variant="contained"
+          startIcon={
+            isLoading.addGoal ? <CircularProgress size={20} /> : <Add />
+          }
+          onClick={handleAddGoal}
+          disabled={isLoading.addGoal}
+        >
           Add
         </Button>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
-        {(weeklyGoals[selectedWeek] || []).map(goal => (
-          <Grid key={goal.id} size={1}>
-            <Paper
-              elevation={1}
-              sx={{
-                cursor: 'pointer',
-                p: 2,
-                '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
-              }}
-              onClick={() => handleEditClick(goal)}
-            >
-              <Typography variant="h6">{goal.title}</Typography>
-              <Box
+      {isLoading.goals ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
+          {(weeklyGoals[selectedWeek] || []).map(goal => (
+            <Grid key={goal.id} size={1}>
+              <Paper
+                elevation={1}
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  cursor: 'pointer',
+                  p: 2,
+                  '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
                 }}
+                onClick={() => handleEditClick(goal)}
               >
-                <Typography variant="h4">{goal.count}</Typography>
-                {!isEditing && (
-                  <Button
-                    variant="contained"
-                    startIcon={<PlusOne />}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleIncrement(goal.id);
-                    }}
-                  />
-                )}
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
+                <Typography variant="h6">{goal.title}</Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography variant="h4">{goal.count}</Typography>
+                  {!isEditing && (
+                    <Button
+                      variant="contained"
+                      startIcon={
+                        isLoading.incrementGoal ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <PlusOne />
+                        )
+                      }
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleIncrement(goal.id);
+                      }}
+                      disabled={isLoading.incrementGoal}
+                    />
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       <Dialog open={!!editingGoal} onClose={() => setEditingGoal(null)}>
         <DialogTitle>Edit Goal</DialogTitle>
@@ -260,12 +309,20 @@ const MainPage = ({
           <Button
             color="error"
             onClick={() => handleDeleteGoal(editingGoal.id)}
+            disabled={isLoading.deleteGoal || isLoading.updateGoal}
+            startIcon={
+              isLoading.deleteGoal ? <CircularProgress size={20} /> : null
+            }
           >
             Delete
           </Button>
           <Button
             variant="contained"
             onClick={() => handleUpdateGoal(editingGoal)}
+            disabled={isLoading.deleteGoal || isLoading.updateGoal}
+            startIcon={
+              isLoading.updateGoal ? <CircularProgress size={20} /> : null
+            }
           >
             Save
           </Button>
