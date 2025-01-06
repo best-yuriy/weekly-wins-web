@@ -36,17 +36,18 @@ jobs:
           echo "NEW_VERSION=${NEW_VERSION#v}" >> $GITHUB_ENV
           echo "branch_name=$branch_name" >> $GITHUB_ENV
           git add package*.json
-          git commit -m "Bump version to $NEW_VERSION"
+          # Release-As directive tells GitHub to create a version tag when the PR is merged
+          git commit -m "Bump version to $NEW_VERSION
+
+          Release-As: ${NEW_VERSION#v}"
           git push origin $branch_name
 
       - name: Create Pull Request
-        # Release-As directive tells GitHub to create a version tag when the PR is merged
+        # Release-As directive is in the version bump commit message
         run: |
           gh pr create \
             --title "chore: bump version to ${{ env.NEW_VERSION }}" \
-            --body "Automated version bump to ${{ env.NEW_VERSION }}.
-
-            Release-As: ${{ env.NEW_VERSION }}" \
+            --body "Bump version to v${{ env.NEW_VERSION }}" \
             --base main \
             --head ${{ env.branch_name }}
         env:
