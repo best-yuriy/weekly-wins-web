@@ -15,5 +15,25 @@ jobs:
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'version-bump/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating releases
     steps:
-      - run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }} # Same PAT as version-bump workflow
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }} # Same PAT for release creation

@@ -1,15 +1,38 @@
-# React + Vite
+# Weekly Wins
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Track and celebrate your weekly accomplishments.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This project uses:
 
-## Testing
+- React + Vite for the frontend
+- Firebase for hosting and backend
+- GitHub Actions for CI/CD
 
-This project uses Vitest for testing. Run tests with:
+### Getting Started
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run development server:
+
+```bash
+npm run dev
+```
+
+### Testing
+
+Run tests with:
+
+```bash
+npm test           # Watch mode
+npm run test:unit  # Run unit tests once
+npm run test:ci    # Run all tests including emulator tests
+```
 
 ## Release Process
 
@@ -17,34 +40,31 @@ The project uses automated version management and deployment through GitHub Acti
 
 1. **Initiate Version Bump**
 
-   - Go to GitHub Actions → "Version Bump" workflow
+   - Go to Actions → "Version Bump" workflow
    - Click "Run workflow"
    - Select version type (patch/minor/major)
    - This creates a PR with the version bump
 
 2. **Review and Merge**
 
-   - PR will run all checks (lint and tests)
+   - PR will run quality checks (lint, format, tests, build)
    - Review and approve the PR
-   - Squash merge the PR
-   - This will create a git tag for the new version
+   - Merge the PR
+   - This triggers the release workflow
 
 3. **Automatic Release and Deploy**
-   When the version tag is pushed, GitHub Actions will automatically:
+   When the version bump PR is merged, GitHub Actions will:
    - Create a GitHub release with auto-generated notes
-   - Deploy the application to Firebase Hosting
+   - Deploy the new version to Firebase
    - Deploy updated Firestore rules
 
 ### Manual Deployment
 
-To deploy an existing version (e.g., for rollbacks):
+For manual deployments (e.g., rollbacks):
 
-1. Go to GitHub Actions → "Release and Deploy" workflow
+1. Go to Actions → "Deploy" workflow
 2. Click "Run workflow"
-3. Select the branch, tag, or commit to deploy using the ref dropdown
-4. Choose whether to:
-   - Just deploy the selected ref (leave "Create GitHub release" unchecked)
-   - Create a release and deploy (check "Create GitHub release")
-5. Click "Run workflow"
+3. Select the branch to deploy
+4. Click "Run workflow"
 
-Note: Pre-releases can be created by including `-alpha`, `-beta`, or `-rc` in the version number.
+Note: Pre-releases are automatically detected by hyphens in version numbers (e.g., `1.0.0-beta.1`).

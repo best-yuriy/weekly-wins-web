@@ -16,5 +16,42 @@ on:
 jobs:
   create-version-pr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }} # This configures git for all subsequent operations
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # The remote URL is already configured with authentication by the checkout action
+
+      - name: Create version bump branch
+        run: |
+          branch_name="version-bump/$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $branch_name
+          NEW_VERSION=$(npm version ${{ inputs.version_type }} --no-git-tag-version)
+          echo "NEW_VERSION=${NEW_VERSION#v}" >> $GITHUB_ENV
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
+          git add package*.json
+          git commit -m "Bump version to $NEW_VERSION"
+          git push origin $branch_name  # Uses auth from checkout action
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --title "chore: bump version to ${{ env.NEW_VERSION }}" \
+            --body "Bump version to v${{ env.NEW_VERSION }}" \
+            --base main \
+            --head ${{ env.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }} # Needed separately for gh cli
