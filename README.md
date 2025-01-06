@@ -27,10 +27,10 @@ The project uses automated version management and deployment through GitHub Acti
    - PR will run all checks (lint and tests)
    - Review and approve the PR
    - Squash merge the PR
-   - This will create a git tag for the new version
+   - The merge commit will automatically create a version tag
 
 3. **Automatic Release and Deploy**
-   When the version tag is pushed, GitHub Actions will automatically:
+   When the version tag is created, GitHub Actions will automatically:
    - Create a GitHub release with auto-generated notes
    - Deploy the application to Firebase Hosting
    - Deploy updated Firestore rules
@@ -41,7 +41,7 @@ To deploy an existing version (e.g., for rollbacks):
 
 1. Go to GitHub Actions → "Release and Deploy" workflow
 2. Click "Run workflow"
-3. Select the branch, tag, or commit to deploy using the ref dropdown
+3. Select the branch, tag, or commit to deploy
 4. Choose whether to:
    - Just deploy the selected ref (leave "Create GitHub release" unchecked)
    - Create a release and deploy (check "Create GitHub release")
