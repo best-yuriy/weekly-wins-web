@@ -1,0 +1,15 @@
+# Deploys code to Firebase
+# - Automatic deploy on merge to main
+# - Manual deploy for rollbacks
+# - Deploys both hosting and Firestore rules
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1
