@@ -13,6 +13,13 @@ vi.mock('../utils/dateUtils', async () => {
   };
 });
 
+// Helper function to get path count from tally marks
+const getTallyPathCount = () => {
+  const svgs = screen.getAllByTestId('tally-mark');
+  expect(svgs[0]).toBeInTheDocument();
+  return svgs[0].querySelectorAll('path').length;
+};
+
 describe('MainPage', () => {
   const testGoal = {
     id: 'test-id',
@@ -71,9 +78,7 @@ describe('MainPage', () => {
     const plusButton = screen.getByTestId('PlusOneIcon').parentElement;
     await userEvent.click(plusButton);
 
-    await waitFor(() => {
-      expect(screen.getByText('1')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(getTallyPathCount()).toBe(1));
   });
 
   it('enables editing mode when clicking Edit button', async () => {
@@ -214,7 +219,7 @@ describe('MainPage', () => {
       render(<MainPage goalsService={service} />);
 
       // Check current week count
-      await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument());
+      await waitFor(() => expect(getTallyPathCount()).toBe(1));
 
       // Click the select to open it
       await userEvent.click(screen.getByRole('combobox'));
@@ -222,7 +227,7 @@ describe('MainPage', () => {
       await userEvent.click(screen.getByText('Mar 18, 2024'));
 
       // Check previous week has different count
-      await waitFor(() => expect(screen.getByText('2')).toBeInTheDocument());
+      await waitFor(() => expect(getTallyPathCount()).toBe(2));
     });
   });
 
