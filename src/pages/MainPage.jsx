@@ -17,6 +17,7 @@ import { getCurrentWeekKey } from '../utils/dateUtils';
 import PropTypes from 'prop-types';
 import FirestoreGoalsService from '../services/goals/FirestoreGoalsService';
 import CircularProgress from '@mui/material/CircularProgress';
+import TallyMarks from '../components/TallyMarks';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -244,7 +245,7 @@ const MainPage = ({
                     alignItems: 'center',
                   }}
                 >
-                  <Typography variant="h4">{goal.count}</Typography>
+                  <TallyMarks count={goal.count} />
                   {!isEditing && (
                     <Button
                       variant="contained"
