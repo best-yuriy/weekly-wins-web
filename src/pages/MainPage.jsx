@@ -169,37 +169,37 @@ const MainPage = ({
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="h4" component="h1">
-            Weekly Goals
-          </Typography>
-          <Select
-            value={selectedWeek}
-            onChange={e => setSelectedWeek(e.target.value)}
-            size="small"
-          >
-            {availableWeeks.map(week => (
-              <MenuItem key={week} value={week}>
-                {new Date(week + 'T00:00:00').toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+        Weekly Goals
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <Select
+          value={selectedWeek}
+          onChange={e => setSelectedWeek(e.target.value)}
+          size="small"
+          sx={{ width: '100%' }}
+        >
+          {availableWeeks.map(week => (
+            <MenuItem key={week} value={week}>
+              {new Date(week + 'T00:00:00').toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </MenuItem>
+          ))}
+        </Select>
         <Button
           variant={isEditing ? 'contained' : 'outlined'}
           startIcon={isEditing ? <Check /> : <Edit />}
           onClick={() => setIsEditing(!isEditing)}
+          sx={{ width: '6rem' }}
         >
           {isEditing ? 'Done' : 'Edit'}
         </Button>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, mb: 4 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
           fullWidth
           placeholder="Enter new goal"
@@ -207,6 +207,8 @@ const MainPage = ({
           onChange={e => setNewGoalTitle(e.target.value)}
           onKeyUp={e => e.key === 'Enter' && handleAddGoal()}
           disabled={isLoading.addGoal}
+          size="small"
+          sx={{ width: '100%' }}
         />
         <Button
           variant="contained"
@@ -215,6 +217,7 @@ const MainPage = ({
           }
           onClick={handleAddGoal}
           disabled={isLoading.addGoal}
+          sx={{ width: '6rem' }}
         >
           Add
         </Button>
@@ -233,37 +236,60 @@ const MainPage = ({
                 sx={{
                   cursor: 'pointer',
                   p: 2,
+                  display: 'flex',
                   '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
                 }}
                 onClick={() => handleEditClick(goal)}
               >
-                <Typography variant="h6">{goal.title}</Typography>
                 <Box
                   sx={{
+                    flex: 1,
                     display: 'flex',
+                    flexDirection: 'column',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
                   }}
                 >
+                  <Typography variant="h6">{goal.title}</Typography>
                   <TallyMarks count={goal.count} />
-                  {!isEditing && (
+                </Box>
+                {!isEditing && (
+                  <Box
+                    sx={{
+                      width: '5rem',
+                      minWidth: '5rem',
+                      ml: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Button
+                      fullWidth
                       variant="contained"
-                      startIcon={
-                        isLoading.incrementGoal ? (
-                          <CircularProgress size={20} />
-                        ) : (
-                          <PlusOne />
-                        )
-                      }
                       onClick={e => {
                         e.stopPropagation();
                         handleIncrement(goal.id);
                       }}
                       disabled={isLoading.incrementGoal}
-                    />
-                  )}
-                </Box>
+                      sx={{
+                        height: '3.5rem',
+                        width: '3.5rem',
+                        minWidth: '3.5rem',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        ml: 'auto',
+                      }}
+                    >
+                      {isLoading.incrementGoal ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <PlusOne />
+                      )}
+                    </Button>
+                  </Box>
+                )}
               </Paper>
             </Grid>
           ))}
