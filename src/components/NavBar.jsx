@@ -14,7 +14,7 @@ function NavBar({ user = null }) {
   };
 
   return (
-    <AppBar position="static" sx={{ mb: 2 }}>
+    <AppBar position="static">
       <Toolbar>
         <Button color="inherit" component={RouterLink} to="/" sx={{ mr: 2 }}>
           Home
