@@ -236,37 +236,60 @@ const MainPage = ({
                 sx={{
                   cursor: 'pointer',
                   p: 2,
+                  display: 'flex',
                   '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
                 }}
                 onClick={() => handleEditClick(goal)}
               >
-                <Typography variant="h6">{goal.title}</Typography>
                 <Box
                   sx={{
+                    flex: 1,
                     display: 'flex',
+                    flexDirection: 'column',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
                   }}
                 >
+                  <Typography variant="h6">{goal.title}</Typography>
                   <TallyMarks count={goal.count} />
-                  {!isEditing && (
+                </Box>
+                {!isEditing && (
+                  <Box
+                    sx={{
+                      width: '5rem',
+                      minWidth: '5rem',
+                      ml: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Button
+                      fullWidth
                       variant="contained"
-                      startIcon={
-                        isLoading.incrementGoal ? (
-                          <CircularProgress size={20} />
-                        ) : (
-                          <PlusOne />
-                        )
-                      }
                       onClick={e => {
                         e.stopPropagation();
                         handleIncrement(goal.id);
                       }}
                       disabled={isLoading.incrementGoal}
-                    />
-                  )}
-                </Box>
+                      sx={{
+                        height: '3.5rem',
+                        width: '3.5rem',
+                        minWidth: '3.5rem',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        ml: 'auto',
+                      }}
+                    >
+                      {isLoading.incrementGoal ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <PlusOne />
+                      )}
+                    </Button>
+                  </Box>
+                )}
               </Paper>
             </Grid>
           ))}
