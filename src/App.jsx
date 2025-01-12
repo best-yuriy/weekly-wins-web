@@ -1,4 +1,4 @@
-import { ThemeProvider, createTheme, Container } from '@mui/material';
+import { ThemeProvider, Container } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainPage from './pages/MainPage';
@@ -8,12 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useState, useEffect } from 'react';
 import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-  },
-});
+import { theme } from './theme/theme';
 
 function App() {
   const [user, setUser] = useState(null);
