@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -21,13 +21,15 @@ const Login = () => {
   const [isEmailLinkSent, setIsEmailLinkSent] = useState(false);
   const navigate = useNavigate();
   const auth = getAuth();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
   useEffect(() => {
-    // Redirect to home if user is already logged in
+    // Redirect to original route if user is already logged in
     if (auth.currentUser) {
-      navigate('/');
+      navigate(from);
     }
-  }, [auth.currentUser, navigate]);
+  }, [auth.currentUser, navigate, from]);
 
   useEffect(() => {
     // Check if the user is accessing the page from an email link
