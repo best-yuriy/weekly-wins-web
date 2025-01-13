@@ -12,12 +12,19 @@ vi.mock('firebase/auth', () => ({
   signInWithEmailLink: vi.fn(),
 }));
 
-// Mock useNavigate
+// Create mockNavigate and mockLocation that we can update
+const mockNavigate = vi.fn();
+let mockLocation = {
+  state: { from: '/protected-route' },
+};
+
+// Mock react-router-dom
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
+    useLocation: () => mockLocation,
   };
 });
 
@@ -32,10 +39,13 @@ const renderLogin = () => {
 describe('Login', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset location mock to default state
+    mockLocation = {
+      state: { from: '/protected-route' },
+    };
     firebaseAuth.signInWithEmailLink.mockResolvedValue({
       additionalUserInfo: { isNewUser: false },
     });
-    // Mock successful sendSignInLinkToEmail by default
     firebaseAuth.sendSignInLinkToEmail.mockResolvedValue();
   });
 
@@ -130,5 +140,45 @@ describe('Login', () => {
     await waitFor(() => {
       expect(screen.getByText('Failed to send email')).toBeInTheDocument();
     });
+  });
+
+  it('redirects to original route when user is already authenticated', () => {
+    // Mock authenticated user
+    vi.mocked(firebaseAuth.getAuth).mockReturnValue({
+      currentUser: { uid: '123' },
+    });
+
+    renderLogin();
+
+    expect(mockNavigate).toHaveBeenCalledWith('/protected-route');
+  });
+
+  it('redirects to root after successful email link sign-in', async () => {
+    // Mock email link sign-in
+    vi.mocked(firebaseAuth.isSignInWithEmailLink).mockReturnValue(true);
+    localStorage.getItem.mockReturnValue('test@example.com');
+    vi.mocked(firebaseAuth.signInWithEmailLink).mockResolvedValue({
+      additionalUserInfo: { isNewUser: false },
+    });
+
+    renderLogin();
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('redirects to root when no original route is specified', () => {
+    // Update the location mock for this test only
+    mockLocation = { state: null };
+
+    // Mock authenticated user
+    vi.mocked(firebaseAuth.getAuth).mockReturnValue({
+      currentUser: { uid: '123' },
+    });
+
+    renderLogin();
+
+    expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 });
