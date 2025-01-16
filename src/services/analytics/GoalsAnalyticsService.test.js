@@ -43,13 +43,17 @@ describe('GoalsAnalyticsService', () => {
       weeklyTrends: [
         {
           week: '2024-01-01',
-          Exercise: 3,
-          Reading: 5,
+          goals: {
+            Exercise: 3,
+            Reading: 5,
+          },
         },
         {
           week: '2024-01-08',
-          Exercise: 4,
-          Reading: 0,
+          goals: {
+            Exercise: 4,
+            Reading: 0,
+          },
         },
       ],
       summary: {
@@ -61,6 +65,10 @@ describe('GoalsAnalyticsService', () => {
           consistency: '100%',
         },
         totalActions: 12,
+        currentWeekStats: {
+          totalActions: 8,
+          percentFromAverage: 33,
+        },
       },
     });
   });
@@ -78,6 +86,10 @@ describe('GoalsAnalyticsService', () => {
           consistency: '0%',
         },
         totalActions: 0,
+        currentWeekStats: {
+          totalActions: 0,
+          percentFromAverage: 0,
+        },
       },
     });
   });
@@ -96,6 +108,7 @@ describe('GoalsAnalyticsService', () => {
       weeklyTrends: [
         {
           week: '2024-01-01',
+          goals: {},
         },
       ],
       summary: {
@@ -104,6 +117,10 @@ describe('GoalsAnalyticsService', () => {
           consistency: '0%',
         },
         totalActions: 0,
+        currentWeekStats: {
+          totalActions: 0,
+          percentFromAverage: 0,
+        },
       },
     });
   });
@@ -177,21 +194,26 @@ describe('GoalsAnalyticsService', () => {
     expect(stats.weeklyTrends).toEqual([
       {
         week: '2024-01-01',
-        Exercise: 3,
-        Reading: 5,
-        Meditation: undefined,
+        goals: {
+          Exercise: 3,
+          Reading: 5,
+        },
       },
       {
         week: '2024-01-08',
-        Exercise: 4,
-        Reading: undefined,
-        Meditation: 2,
+        goals: {
+          Exercise: 4,
+          Reading: undefined,
+          Meditation: 2,
+        },
       },
       {
         week: '2024-01-15',
-        Exercise: 2,
-        Reading: undefined,
-        Meditation: 3,
+        goals: {
+          Exercise: 2,
+          Reading: undefined,
+          Meditation: 3,
+        },
       },
     ]);
   });

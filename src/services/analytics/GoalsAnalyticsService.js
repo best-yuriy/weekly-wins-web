@@ -19,10 +19,12 @@ class GoalsAnalyticsService {
       ...this.calculateGoalStats(title, weeklyGoals),
     }));
 
+    const weeklyTrends = this.calculateWeeklyTrends(weeklyGoals);
+
     return {
       goalStats,
-      weeklyTrends: this.calculateWeeklyTrends(weeklyGoals),
-      summary: this.calculateSummaryStats(goalStats),
+      weeklyTrends,
+      summary: this.calculateSummaryStats(goalStats, weeklyTrends),
     };
   }
 
@@ -64,10 +66,17 @@ class GoalsAnalyticsService {
    */
   calculateWeeklyTrends(weeklyGoals) {
     return weeklyGoals.map(week => {
-      const dataPoint = { week: week.id };
+      // Create base object with week ID
+      const dataPoint = {
+        week: week.id,
+        goals: {},
+      };
+
+      // Add goals to the goals object
       week.goals.forEach(goal => {
-        dataPoint[goal.title] = goal.count;
+        dataPoint.goals[goal.title] = goal.count;
       });
+
       return dataPoint;
     });
   }
@@ -75,7 +84,7 @@ class GoalsAnalyticsService {
   /**
    * @private
    */
-  calculateSummaryStats(goalStats) {
+  calculateSummaryStats(goalStats, weeklyTrends) {
     if (goalStats.length === 0) {
       return {
         mostConsistentGoal: {
@@ -83,6 +92,10 @@ class GoalsAnalyticsService {
           consistency: '0%',
         },
         totalActions: 0,
+        currentWeekStats: {
+          totalActions: 0,
+          percentFromAverage: 0,
+        },
       };
     }
 
@@ -97,9 +110,24 @@ class GoalsAnalyticsService {
       0
     );
 
+    // Calculate current week's total actions from the goals
+    const currentWeekActions = Object.values(
+      weeklyTrends[0]?.goals || {}
+    ).reduce((sum, count) => sum + (count || 0), 0);
+
+    const averageActions = totalActions / weeklyTrends.length;
+    const percentFromAverage =
+      averageActions > 0
+        ? ((currentWeekActions - averageActions) / averageActions) * 100
+        : 0;
+
     return {
       mostConsistentGoal,
       totalActions,
+      currentWeekStats: {
+        totalActions: currentWeekActions,
+        percentFromAverage: Math.round(percentFromAverage),
+      },
     };
   }
 }

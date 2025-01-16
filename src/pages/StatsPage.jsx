@@ -159,9 +159,15 @@ const StatsPage = ({ goalsService = defaultService }) => {
               titleTypographyProps={{ variant: 'h6' }}
             />
             <CardContent>
-              <Typography variant="h5">15 Actions</Typography>
+              <Typography variant="h5">
+                {data.summary.currentWeekStats.totalActions} Actions
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                20% above average
+                {data.summary.currentWeekStats.percentFromAverage}%{' '}
+                {data.summary.currentWeekStats.percentFromAverage < 0
+                  ? 'below'
+                  : 'above'}{' '}
+                average
               </Typography>
             </CardContent>
           </Card>
