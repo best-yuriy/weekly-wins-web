@@ -108,21 +108,10 @@ describe('Login', () => {
     );
   });
 
-  it('shows error when email is missing during email link sign-in', () => {
-    // Mock isSignInWithEmailLink to return true
-    firebaseAuth.isSignInWithEmailLink.mockReturnValue(true);
-
-    // Mock localStorage getItem to return null
-    localStorage.getItem.mockReturnValue(null);
-
-    renderLogin();
-
-    expect(
-      screen.getByText('Please provide your email again for confirmation')
-    ).toBeInTheDocument();
-  });
-
   it('handles sign-in errors', async () => {
+    // Mock isSignInWithEmailLink to return false explicitly
+    firebaseAuth.isSignInWithEmailLink.mockReturnValue(false);
+
     firebaseAuth.sendSignInLinkToEmail.mockRejectedValue(
       new Error('Failed to send email')
     );
@@ -180,5 +169,26 @@ describe('Login', () => {
     renderLogin();
 
     expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
+
+  it('shows email confirmation form when accessing via email link', () => {
+    // Mock isSignInWithEmailLink to return true
+    firebaseAuth.isSignInWithEmailLink.mockReturnValue(true);
+
+    // Mock localStorage getItem to return null
+    localStorage.getItem.mockReturnValue(null);
+
+    renderLogin();
+
+    // Check for the sign-in completion form
+    expect(
+      screen.getByRole('heading', { name: 'Complete Sign In' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('textbox', { name: /confirm your email/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Complete Sign In' })
+    ).toBeInTheDocument();
   });
 });
