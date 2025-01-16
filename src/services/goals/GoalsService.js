@@ -71,6 +71,15 @@ class GoalsService {
   async getAvailableWeeks() {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Gets all historical goals across all weeks
+   * @returns {Promise<Array<{id: string, goals: Goal[]}>>} Array of week documents with their goals
+   * @throws {Error} If user is not authenticated
+   */
+  async getAllHistoricalGoals() {
+    throw new Error('Not implemented');
+  }
 }
 
 export default GoalsService;

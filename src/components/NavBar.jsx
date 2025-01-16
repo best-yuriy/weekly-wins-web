@@ -19,6 +19,16 @@ function NavBar({ user = null }) {
         <Button color="inherit" component={RouterLink} to="/" sx={{ mr: 2 }}>
           Home
         </Button>
+        {user && (
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/stats"
+            sx={{ mr: 2 }}
+          >
+            Stats
+          </Button>
+        )}
         <Box sx={{ flexGrow: 1 }} />
         {user ? (
           <Button color="inherit" onClick={handleLogout}>

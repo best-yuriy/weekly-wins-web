@@ -100,6 +100,17 @@ class InMemoryGoalsService extends GoalsService {
     await this._delay('getAvailableWeeks');
     return Object.keys(this.weeks).sort().reverse();
   }
+
+  async getAllHistoricalGoals() {
+    await this._delay('getAllHistoricalGoals');
+    return Object.entries(this.weeks)
+      .map(([id, week]) => ({
+        id,
+        goals: [...week.goals], // Create a copy of the goals array
+      }))
+      .sort((a, b) => b.id.localeCompare(a.id))
+      .reverse();
+  }
 }
 
 export default InMemoryGoalsService;
