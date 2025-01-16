@@ -6,6 +6,7 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  collection,
 } from 'firebase/firestore';
 import FirestoreGoalsService from './FirestoreGoalsService';
 
@@ -282,6 +283,42 @@ describe('FirestoreGoalsService', () => {
       getDocs.mockRejectedValueOnce(firestoreError);
 
       await expect(service.getAvailableWeeks()).rejects.toThrow(firestoreError);
+    });
+  });
+
+  describe('getAllHistoricalGoals', () => {
+    it('returns all weeks with their goals', async () => {
+      const mockWeeks = [
+        { id: '2024-03-25', data: () => ({ goals: [testGoal] }) },
+        { id: '2024-03-18', data: () => ({ goals: [] }) },
+      ];
+      getDocs.mockResolvedValueOnce({ docs: mockWeeks });
+
+      const weeks = await service.getAllHistoricalGoals();
+
+      expect(weeks).toEqual([
+        { id: '2024-03-25', goals: [testGoal] },
+        { id: '2024-03-18', goals: [] },
+      ]);
+      expect(getDocs).toHaveBeenCalledWith(
+        collection({}, 'users', 'test-user-id', 'weeks')
+      );
+    });
+
+    it('throws error when user is not authenticated', async () => {
+      mockAuth.currentUser = null;
+
+      await expect(service.getAllHistoricalGoals()).rejects.toThrow(
+        'User not authenticated'
+      );
+    });
+
+    it('propagates Firestore errors', async () => {
+      getDocs.mockRejectedValueOnce(firestoreError);
+
+      await expect(service.getAllHistoricalGoals()).rejects.toThrow(
+        firestoreError
+      );
     });
   });
 });

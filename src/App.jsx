@@ -2,6 +2,7 @@ import { ThemeProvider, Container } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainPage from './pages/MainPage';
+import StatsPage from './pages/StatsPage';
 import Login from './pages/Login';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -28,6 +29,14 @@ function App() {
         <NavBar user={user} />
         <Container maxWidth="sm">
           <Routes>
+            <Route
+              path="/stats"
+              element={
+                <ProtectedRoute user={user}>
+                  <StatsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={

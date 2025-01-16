@@ -132,6 +132,23 @@ class FirestoreGoalsService extends GoalsService {
       .sort()
       .reverse();
   }
+
+  /**
+   * @returns {Promise<Array<{id: string, goals: Goal[]}>>}
+   */
+  async getAllHistoricalGoals() {
+    if (!auth.currentUser?.uid) throw new Error('User not authenticated');
+
+    const weeksRef = collection(db, 'users', auth.currentUser.uid, 'weeks');
+    const snapshot = await getDocs(weeksRef);
+
+    return snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        goals: doc.data().goals || [],
+      }))
+      .sort();
+  }
 }
 
 export default FirestoreGoalsService;
