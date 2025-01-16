@@ -205,7 +205,12 @@ const StatsPage = ({ goalsService = defaultService }) => {
         />
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data.weeklyTrends}>
+            <LineChart
+              data={data.weeklyTrends.map(week => ({
+                week: week.week,
+                ...week.goals,
+              }))}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="week" tickFormatter={formatDate} />
               <YAxis />
