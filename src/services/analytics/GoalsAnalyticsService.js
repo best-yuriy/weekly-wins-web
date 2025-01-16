@@ -112,7 +112,7 @@ class GoalsAnalyticsService {
 
     // Calculate current week's total actions from the goals
     const currentWeekActions = Object.values(
-      weeklyTrends[0]?.goals || {}
+      weeklyTrends[weeklyTrends.length - 1]?.goals || {}
     ).reduce((sum, count) => sum + (count || 0), 0);
 
     const averageActions = totalActions / weeklyTrends.length;
