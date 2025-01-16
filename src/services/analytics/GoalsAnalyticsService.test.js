@@ -66,8 +66,8 @@ describe('GoalsAnalyticsService', () => {
         },
         totalActions: 12,
         currentWeekStats: {
-          totalActions: 8,
-          percentFromAverage: 33,
+          totalActions: 4,
+          percentFromAverage: -33,
         },
       },
     });
