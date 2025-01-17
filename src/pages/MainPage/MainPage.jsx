@@ -6,14 +6,13 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import { Add, Edit, Check } from '@mui/icons-material';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import { getCurrentWeekKey } from '../../utils/dateUtils';
 import PropTypes from 'prop-types';
 import FirestoreGoalsService from '../../services/goals/FirestoreGoalsService';
 import CircularProgress from '@mui/material/CircularProgress';
 import GoalCard from './components/GoalCard/GoalCard';
 import EditGoalDialog from './components/EditGoalDialog/EditGoalDialog';
+import WeekSelector from './components/WeekSelector/WeekSelector';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -169,22 +168,11 @@ const MainPage = ({
         Weekly Goals
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <Select
-          value={selectedWeek}
-          onChange={e => setSelectedWeek(e.target.value)}
-          size="small"
-          sx={{ width: '100%' }}
-        >
-          {availableWeeks.map(week => (
-            <MenuItem key={week} value={week}>
-              {new Date(week + 'T00:00:00').toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </MenuItem>
-          ))}
-        </Select>
+        <WeekSelector
+          selectedWeek={selectedWeek}
+          availableWeeks={availableWeeks}
+          onWeekChange={setSelectedWeek}
+        />
         <Button
           variant={isEditing ? 'contained' : 'outlined'}
           startIcon={isEditing ? <Check /> : <Edit />}
