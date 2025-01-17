@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import { PlusOne } from '@mui/icons-material';
-import TallyMarks from '../../../../components/TallyMarks';
+import TallyMarks from '../TallyMarks/TallyMarks';
 
 const GoalCard = ({ goal, isEditing, onIncrement, onEdit, isLoading }) => {
   return (
