@@ -2,10 +2,6 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
@@ -17,6 +13,7 @@ import PropTypes from 'prop-types';
 import FirestoreGoalsService from '../../services/goals/FirestoreGoalsService';
 import CircularProgress from '@mui/material/CircularProgress';
 import GoalCard from './components/GoalCard/GoalCard';
+import EditGoalDialog from './components/EditGoalDialog/EditGoalDialog';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -242,65 +239,17 @@ const MainPage = ({
         </Grid>
       )}
 
-      <Dialog open={!!editingGoal} onClose={() => setEditingGoal(null)}>
-        <DialogTitle>Edit Goal</DialogTitle>
-        <DialogContent>
-          {editingGoal && (
-            <Box
-              sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}
-            >
-              <TextField
-                fullWidth
-                label="Goal title"
-                value={editingGoal.title}
-                onChange={e =>
-                  setEditingGoal({ ...editingGoal, title: e.target.value })
-                }
-                onKeyUp={e =>
-                  e.key === 'Enter' && handleUpdateGoal(editingGoal)
-                }
-              />
-              <TextField
-                fullWidth
-                type="number"
-                label="Count"
-                value={editingGoal.count}
-                onChange={e =>
-                  setEditingGoal({
-                    ...editingGoal,
-                    count: parseInt(e.target.value) || 0,
-                  })
-                }
-                onKeyUp={e =>
-                  e.key === 'Enter' && handleUpdateGoal(editingGoal)
-                }
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            color="error"
-            onClick={() => handleDeleteGoal(editingGoal.id)}
-            disabled={isLoading.deleteGoal || isLoading.updateGoal}
-            startIcon={
-              isLoading.deleteGoal ? <CircularProgress size={20} /> : null
-            }
-          >
-            Delete
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => handleUpdateGoal(editingGoal)}
-            disabled={isLoading.deleteGoal || isLoading.updateGoal}
-            startIcon={
-              isLoading.updateGoal ? <CircularProgress size={20} /> : null
-            }
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <EditGoalDialog
+        goal={editingGoal}
+        isOpen={!!editingGoal}
+        onClose={() => setEditingGoal(null)}
+        onSave={handleUpdateGoal}
+        onDelete={handleDeleteGoal}
+        isLoading={{
+          save: isLoading.updateGoal,
+          delete: isLoading.deleteGoal,
+        }}
+      />
     </Container>
   );
 };
