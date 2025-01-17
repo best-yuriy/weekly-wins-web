@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
-import { Add, Edit, Check } from '@mui/icons-material';
+import { Edit, Check } from '@mui/icons-material';
 import { getCurrentWeekKey } from '../../utils/dateUtils';
 import PropTypes from 'prop-types';
 import FirestoreGoalsService from '../../services/goals/FirestoreGoalsService';
@@ -13,6 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import GoalCard from './components/GoalCard/GoalCard';
 import EditGoalDialog from './components/EditGoalDialog/EditGoalDialog';
 import WeekSelector from './components/WeekSelector/WeekSelector';
+import GoalInput from './components/GoalInput/GoalInput';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -24,7 +24,6 @@ const MainPage = ({
   const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekKey());
   const [availableWeeks, setAvailableWeeks] = useState([selectedWeek]);
   const [isEditing, setIsEditing] = useState(false);
-  const [newGoalTitle, setNewGoalTitle] = useState('');
   const [editingGoal, setEditingGoal] = useState(null);
   const [isLoading, setIsLoading] = useState({
     weeks: false,
@@ -74,26 +73,24 @@ const MainPage = ({
     loadGoals();
   }, [goalsService, selectedWeek]);
 
-  const handleAddGoal = async () => {
-    if (newGoalTitle.trim()) {
-      setIsLoading(prev => ({ ...prev, addGoal: true }));
-      try {
-        await goalsService.addGoal(selectedWeek, {
-          title: newGoalTitle,
-          count: 0,
-        });
+  const handleAddGoal = async title => {
+    setIsLoading(prev => ({ ...prev, addGoal: true }));
+    try {
+      await goalsService.addGoal(selectedWeek, {
+        title,
+        count: 0,
+      });
 
-        const goals = await goalsService.getWeeklyGoals(selectedWeek);
-        setWeeklyGoals(prev => ({
-          ...prev,
-          [selectedWeek]: goals,
-        }));
-        setNewGoalTitle('');
-      } catch (error) {
-        console.error('Failed to add goal:', error);
-      } finally {
-        setIsLoading(prev => ({ ...prev, addGoal: false }));
-      }
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+    } catch (error) {
+      console.error('Failed to add goal:', error);
+      throw error;
+    } finally {
+      setIsLoading(prev => ({ ...prev, addGoal: false }));
     }
   };
 
@@ -183,29 +180,7 @@ const MainPage = ({
         </Button>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          fullWidth
-          placeholder="Enter new goal"
-          value={newGoalTitle}
-          onChange={e => setNewGoalTitle(e.target.value)}
-          onKeyUp={e => e.key === 'Enter' && handleAddGoal()}
-          disabled={isLoading.addGoal}
-          size="small"
-          sx={{ width: '100%' }}
-        />
-        <Button
-          variant="contained"
-          startIcon={
-            isLoading.addGoal ? <CircularProgress size={20} /> : <Add />
-          }
-          onClick={handleAddGoal}
-          disabled={isLoading.addGoal}
-          sx={{ width: '6rem' }}
-        >
-          Add
-        </Button>
-      </Box>
+      <GoalInput onAddGoal={handleAddGoal} isLoading={isLoading.addGoal} />
 
       {isLoading.goals ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
