@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
@@ -10,14 +9,14 @@ import DialogActions from '@mui/material/DialogActions';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
-import { Add, Edit, Check, PlusOne } from '@mui/icons-material';
+import { Add, Edit, Check } from '@mui/icons-material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import { getCurrentWeekKey } from '../utils/dateUtils';
+import { getCurrentWeekKey } from '../../utils/dateUtils';
 import PropTypes from 'prop-types';
-import FirestoreGoalsService from '../services/goals/FirestoreGoalsService';
+import FirestoreGoalsService from '../../services/goals/FirestoreGoalsService';
 import CircularProgress from '@mui/material/CircularProgress';
-import TallyMarks from '../components/TallyMarks';
+import GoalCard from './components/GoalCard/GoalCard';
 
 // Create default instance
 const defaultService = new FirestoreGoalsService();
@@ -231,66 +230,13 @@ const MainPage = ({
         <Grid container spacing={2} columns={{ xs: 1, sm: 2 }}>
           {(weeklyGoals[selectedWeek] || []).map(goal => (
             <Grid key={goal.id} size={1}>
-              <Paper
-                elevation={1}
-                sx={{
-                  cursor: 'pointer',
-                  p: 2,
-                  display: 'flex',
-                  '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
-                }}
-                onClick={() => handleEditClick(goal)}
-              >
-                <Box
-                  sx={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Typography variant="h6">{goal.title}</Typography>
-                  <TallyMarks count={goal.count} />
-                </Box>
-                {!isEditing && (
-                  <Box
-                    sx={{
-                      width: '5rem',
-                      minWidth: '5rem',
-                      ml: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleIncrement(goal.id);
-                      }}
-                      disabled={isLoading.incrementGoal}
-                      sx={{
-                        height: '3.5rem',
-                        width: '3.5rem',
-                        minWidth: '3.5rem',
-                        padding: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '50%',
-                        ml: 'auto',
-                      }}
-                    >
-                      {isLoading.incrementGoal ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <PlusOne />
-                      )}
-                    </Button>
-                  </Box>
-                )}
-              </Paper>
+              <GoalCard
+                goal={goal}
+                isEditing={isEditing}
+                onIncrement={handleIncrement}
+                onEdit={handleEditClick}
+                isLoading={isLoading.incrementGoal}
+              />
             </Grid>
           ))}
         </Grid>
