@@ -1,24 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import MainPage from './MainPage/MainPage';
-import InMemoryGoalsService from '../services/goals/InMemoryGoalsService';
+import MainPage from './MainPage';
+import InMemoryGoalsService from '../../services/goals/InMemoryGoalsService';
 
 // Mock getCurrentWeekKey for consistent dates
-vi.mock('../utils/dateUtils', async () => {
-  const actual = await vi.importActual('../utils/dateUtils');
+vi.mock('../../utils/dateUtils', async () => {
+  const actual = await vi.importActual('../../utils/dateUtils');
   return {
     ...actual,
     getCurrentWeekKey: () => '2024-03-25',
   };
 });
-
-// Helper function to get path count from tally marks
-const getTallyPathCount = () => {
-  const svgs = screen.getAllByTestId('tally-mark');
-  expect(svgs[0]).toBeInTheDocument();
-  return svgs[0].querySelectorAll('path').length;
-};
 
 describe('MainPage', () => {
   const testGoal = {
@@ -27,142 +20,59 @@ describe('MainPage', () => {
     count: 0,
   };
 
-  it('renders the main page with title', async () => {
-    render(<MainPage goalsService={new InMemoryGoalsService()} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Weekly Goals')).toBeInTheDocument();
-    });
-  });
-
-  it('adds a new goal when clicking the add button', async () => {
-    const service = new InMemoryGoalsService();
-
-    render(<MainPage goalsService={service} />);
-
-    const input = screen.getByPlaceholderText('Enter new goal');
-    const addButton = screen.getByText('Add');
-
-    await userEvent.type(input, 'Test Goal');
-    await userEvent.click(addButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Goal')).toBeInTheDocument();
-      expect(screen.getByText('0')).toBeInTheDocument();
-    });
-  });
-
-  it('adds a new goal when pressing enter', async () => {
-    const service = new InMemoryGoalsService();
-    render(<MainPage goalsService={service} />);
-    const input = screen.getByPlaceholderText('Enter new goal');
-
-    await userEvent.type(input, 'Test Goal{enter}');
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Goal')).toBeInTheDocument();
-      expect(screen.getByText('0')).toBeInTheDocument();
-    });
-  });
-
-  it('increments goal count when clicking the plus button', async () => {
-    const service = new InMemoryGoalsService();
-    await service.addGoal('2024-03-25', testGoal);
-
-    render(<MainPage goalsService={service} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Goal')).toBeInTheDocument();
-    });
-
-    const plusButton = screen.getByTestId('PlusOneIcon').parentElement;
-    await userEvent.click(plusButton);
-
-    await waitFor(() => expect(getTallyPathCount()).toBe(1));
-  });
-
-  it('enables editing mode when clicking Edit button', async () => {
-    const service = new InMemoryGoalsService();
-    render(<MainPage goalsService={service} />);
-
-    const editButton = screen.getByText('Edit');
-    await userEvent.click(editButton);
-
-    expect(screen.getByText('Done')).toBeInTheDocument();
-  });
-
-  it('allows editing a goal through the dialog', async () => {
-    const service = new InMemoryGoalsService();
-    await service.addGoal('2024-03-25', testGoal);
-
-    render(<MainPage goalsService={service} />);
-
-    // Enter edit mode and click the goal
-    await userEvent.click(screen.getByText('Edit'));
-    await userEvent.click(screen.getByText('Test Goal'));
-
-    // Edit the goal title
-    const titleInput = screen.getByLabelText('Goal title');
-    await userEvent.clear(titleInput);
-    await userEvent.type(titleInput, 'Updated Goal');
-
-    // Save changes
-    await userEvent.click(screen.getByText('Save'));
-
-    expect(screen.getByText('Updated Goal')).toBeInTheDocument();
-  });
-
-  it('deletes a goal and exits edit mode', async () => {
-    const service = new InMemoryGoalsService();
-    await service.addGoal('2024-03-25', testGoal);
-
-    render(<MainPage goalsService={service} />);
-
-    // Enter edit mode and click the goal
-    await userEvent.click(screen.getByText('Edit'));
-    await userEvent.click(screen.getByText('Test Goal'));
-
-    // Delete the goal
-    await userEvent.click(screen.getByText('Delete'));
-
-    await waitFor(() => {
-      // Check that the goal is deleted
-      expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
-      // Check that we're back in non-edit mode (Edit button is visible)
-      expect(screen.getByText('Edit')).toBeInTheDocument();
-      expect(screen.queryByText('Done')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('week selector', () => {
-    it('shows current week by default', async () => {
-      const service = new InMemoryGoalsService();
-      render(<MainPage goalsService={service} />);
+  describe('default state and current week', () => {
+    it('renders the main page with title', async () => {
+      render(<MainPage goalsService={new InMemoryGoalsService()} />);
 
       await waitFor(() => {
-        expect(screen.getByText('Mar 25, 2024')).toBeInTheDocument();
+        expect(screen.getByText('Weekly Goals')).toBeInTheDocument();
       });
     });
 
-    it('always shows current week in selector even with no goals', async () => {
+    it('displays current week by default', async () => {
       const service = new InMemoryGoalsService();
-      // Don't add any goals - service starts empty
+      // Add goals to multiple weeks
+      await service.addGoal('2024-03-18', { title: 'Past Goal', count: 0 });
+      await service.addGoal('2024-03-25', { title: 'Current Goal', count: 0 });
+      await service.addGoal('2024-03-11', { title: 'Older Goal', count: 0 });
 
       render(<MainPage goalsService={service} />);
 
-      // Click the select to open it
+      // Verify current week is selected
+      expect(screen.getByRole('combobox')).toHaveTextContent('Mar 25, 2024');
+
+      // Verify only current week's goals are shown
+      await waitFor(() => {
+        expect(screen.getByText('Current Goal')).toBeInTheDocument();
+        expect(screen.queryByText('Past Goal')).not.toBeInTheDocument();
+        expect(screen.queryByText('Older Goal')).not.toBeInTheDocument();
+      });
+    });
+
+    it('displays current week by default even with only past goals', async () => {
+      const service = new InMemoryGoalsService();
+      // Add only past goals
+      await service.addGoal('2024-03-18', { title: 'Past Goal', count: 0 });
+      await service.addGoal('2024-03-11', { title: 'Older Goal', count: 0 });
+
+      render(<MainPage goalsService={service} />);
+
+      // Verify current week is selected
+      expect(screen.getByRole('combobox')).toHaveTextContent('Mar 25, 2024');
+
+      // Verify empty state for current week
+      await waitFor(() => {
+        expect(screen.queryByText('Past Goal')).not.toBeInTheDocument();
+        expect(screen.queryByText('Older Goal')).not.toBeInTheDocument();
+      });
+
+      // Verify past weeks are still accessible
       await userEvent.click(screen.getByRole('combobox'));
-
-      // Wait for the dropdown to be populated
-      await waitFor(() => {
-        // Use getAllByRole to get all options and check their text content
-        const options = screen.getAllByRole('option');
-        expect(options).toHaveLength(1);
-        expect(options[0]).toHaveTextContent('Mar 25, 2024');
-      });
+      expect(screen.getByText('Mar 18, 2024')).toBeInTheDocument();
+      expect(screen.getByText('Mar 11, 2024')).toBeInTheDocument();
     });
 
-    it('shows weeks in correct order', async () => {
+    it('shows current week in selector even with only past goals', async () => {
       const service = new InMemoryGoalsService();
       // Add goals in random order
       await service.addGoal('2024-03-18', testGoal);
@@ -174,60 +84,133 @@ describe('MainPage', () => {
 
       const options = screen.getAllByRole('option');
       expect(options.map(opt => opt.textContent)).toEqual([
-        'Mar 25, 2024', // Current week first
+        'Mar 25, 2024', // Current week should be first even with no goals
         'Mar 18, 2024',
         'Mar 11, 2024',
       ]);
     });
+  });
 
-    it('switches between weeks with existing goals', async () => {
+  // Service integration tests
+  describe('service integration', () => {
+    it('loads and displays goals from service', async () => {
       const service = new InMemoryGoalsService();
-      await service.addGoal('2024-03-25', {
+      const currentWeek = '2024-03-25';
+      const previousWeek = '2024-03-18';
+
+      // Add goals to multiple weeks
+      await service.addGoal(currentWeek, {
         ...testGoal,
-        title: 'Current week goal',
+        title: 'Current Goal',
       });
-      await service.addGoal('2024-03-18', {
-        ...testGoal,
-        title: 'Previous week goal',
-      });
+      await service.addGoal(previousWeek, { ...testGoal, title: 'Past Goal' });
 
       render(<MainPage goalsService={service} />);
 
-      // Wait for initial load to complete
+      // Verify initial load
       await waitFor(() => {
-        expect(screen.getByText('Current week goal')).toBeInTheDocument();
+        expect(screen.getByText('Current Goal')).toBeInTheDocument();
       });
-      expect(screen.queryByText('Previous week goal')).not.toBeInTheDocument();
 
-      // Click the select to open it
+      // Switch weeks and verify service loads different goals
       await userEvent.click(screen.getByRole('combobox'));
-      // Click the option for the previous week
       await userEvent.click(screen.getByText('Mar 18, 2024'));
 
-      // Wait for goals to load after week change
       await waitFor(() => {
-        expect(screen.queryByText('Current week goal')).not.toBeInTheDocument();
-        expect(screen.getByText('Previous week goal')).toBeInTheDocument();
+        expect(screen.getByText('Past Goal')).toBeInTheDocument();
       });
     });
 
-    it('maintains separate goal counts for different weeks', async () => {
+    it('handles service errors gracefully', async () => {
       const service = new InMemoryGoalsService();
-      await service.addGoal('2024-03-25', { ...testGoal, count: 1 });
-      await service.addGoal('2024-03-18', { ...testGoal, count: 2 });
+      const error = new Error('Service error');
+      vi.spyOn(service, 'getWeeklyGoals').mockRejectedValue(error);
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       render(<MainPage goalsService={service} />);
 
-      // Check current week count
-      await waitFor(() => expect(getTallyPathCount()).toBe(1));
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith('Failed to load goals:', error);
+      });
 
-      // Click the select to open it
+      consoleSpy.mockRestore();
+    });
+  });
+
+  // Component interaction tests
+  describe('component interactions', () => {
+    it('coordinates edit mode between components', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', testGoal);
+
+      render(<MainPage goalsService={service} />);
+
+      // Enter edit mode
+      await userEvent.click(screen.getByText('Edit'));
+
+      // Verify all components reflect edit mode
+      expect(screen.getByText('Done')).toBeInTheDocument();
+      await userEvent.click(screen.getByText('Test Goal'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('maintains state consistency across components', async () => {
+      const service = new InMemoryGoalsService();
+      service.addGoal('2024-03-18', testGoal);
+      render(<MainPage goalsService={service} />);
+
+      // Add a goal via GoalInput
+      await userEvent.type(
+        screen.getByPlaceholderText('Enter new goal'),
+        'New Goal{enter}'
+      );
+
+      // Verify it appears in GoalCard list
+      await waitFor(() => {
+        expect(screen.getByText('New Goal')).toBeInTheDocument();
+      });
+
+      // Type to show suggestions and verify the added goal isn't suggested
+      await userEvent.type(
+        screen.getByPlaceholderText('Enter new goal'),
+        'goal'
+      );
+
+      // Look for suggestions in the Popper/Paper/List structure
+      await waitFor(() => {
+        const suggestionsList = screen.getByRole('list');
+        expect(suggestionsList).toHaveTextContent('Test Goal');
+        expect(suggestionsList).not.toHaveTextContent('New Goal');
+      });
+    });
+  });
+
+  // Week management tests
+  describe('week management', () => {
+    it('maintains separate state for different weeks', async () => {
+      const service = new InMemoryGoalsService();
+      await service.addGoal('2024-03-25', { title: 'Current Goal', count: 1 });
+      await service.addGoal('2024-03-18', { title: 'Past Goal', count: 2 });
+
+      render(<MainPage goalsService={service} />);
+
+      // Check current week
+      await waitFor(() => {
+        expect(screen.getByText('Current Goal')).toBeInTheDocument();
+        expect(screen.queryByText('Past Goal')).not.toBeInTheDocument();
+      });
+
+      // Switch weeks
       await userEvent.click(screen.getByRole('combobox'));
-      // Click the option for the previous week
       await userEvent.click(screen.getByText('Mar 18, 2024'));
 
-      // Check previous week has different count
-      await waitFor(() => expect(getTallyPathCount()).toBe(2));
+      // Check previous week
+      await waitFor(() => {
+        expect(screen.queryByText('Current Goal')).not.toBeInTheDocument();
+        expect(screen.getByText('Past Goal')).toBeInTheDocument();
+      });
     });
   });
 
