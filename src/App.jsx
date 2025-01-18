@@ -1,7 +1,7 @@
 import { ThemeProvider, Container } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainPage from './pages/MainPage';
+import MainPage from './pages/MainPage/MainPage';
 import StatsPage from './pages/StatsPage';
 import Login from './pages/Login';
 import { auth } from './firebase';

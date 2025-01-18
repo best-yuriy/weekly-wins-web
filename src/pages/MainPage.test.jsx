@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import MainPage from './MainPage';
+import MainPage from './MainPage/MainPage';
 import InMemoryGoalsService from '../services/goals/InMemoryGoalsService';
 
 // Mock getCurrentWeekKey for consistent dates
