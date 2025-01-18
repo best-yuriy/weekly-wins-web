@@ -25,6 +25,7 @@ const MainPage = ({
   const [availableWeeks, setAvailableWeeks] = useState([selectedWeek]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState({
     weeks: false,
     goals: false,
@@ -72,6 +73,29 @@ const MainPage = ({
     };
     loadGoals();
   }, [goalsService, selectedWeek]);
+
+  // Add effect to load historical goals for suggestions
+  useEffect(() => {
+    const loadHistoricalGoals = async () => {
+      try {
+        const historicalData = await goalsService.getAllHistoricalGoals();
+        const allGoals = historicalData.flatMap(week => week.goals);
+        const currentGoals = new Set(
+          (weeklyGoals[selectedWeek] || []).map(g => g.title)
+        );
+
+        // Create unique set of suggestions, excluding current week's goals
+        const uniqueSuggestions = new Set(
+          allGoals.map(g => g.title).filter(title => !currentGoals.has(title))
+        );
+
+        setSuggestions(Array.from(uniqueSuggestions));
+      } catch (error) {
+        console.error('Failed to load historical goals:', error);
+      }
+    };
+    loadHistoricalGoals();
+  }, [goalsService, weeklyGoals, selectedWeek]);
 
   const handleAddGoal = async title => {
     setIsLoading(prev => ({ ...prev, addGoal: true }));
@@ -180,7 +204,11 @@ const MainPage = ({
         </Button>
       </Box>
 
-      <GoalInput onAddGoal={handleAddGoal} isLoading={isLoading.addGoal} />
+      <GoalInput
+        onAddGoal={handleAddGoal}
+        isLoading={isLoading.addGoal}
+        suggestions={suggestions}
+      />
 
       {isLoading.goals ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>

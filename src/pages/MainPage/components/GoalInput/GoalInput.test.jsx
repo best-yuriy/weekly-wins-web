@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GoalInput from './GoalInput';
 
@@ -7,6 +7,7 @@ describe('GoalInput', () => {
   const defaultProps = {
     onAddGoal: vi.fn(),
     isLoading: false,
+    suggestions: ['Previous Goal 1', 'Previous Goal 2', 'An older Goal'],
   };
 
   beforeEach(() => {
@@ -64,5 +65,65 @@ describe('GoalInput', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter new goal')).toBeDisabled();
     expect(screen.getByText('Add')).toBeDisabled();
+  });
+
+  it('shows suggestions when typing', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, 'Goal');
+
+    expect(screen.getByText('Previous Goal 1')).toBeInTheDocument();
+    expect(screen.getByText('Previous Goal 2')).toBeInTheDocument();
+  });
+
+  it('filters suggestions based on input', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, 'older');
+
+    expect(screen.getByText('An older Goal')).toBeInTheDocument();
+    expect(screen.queryByText('Previous Goal 1')).not.toBeInTheDocument();
+  });
+
+  it('filters suggestions based on input case insensitive', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, 'Older');
+
+    expect(screen.getByText('An older Goal')).toBeInTheDocument();
+    expect(screen.queryByText('Previous Goal 1')).not.toBeInTheDocument();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, 'an older');
+
+    expect(screen.getByText('An older Goal')).toBeInTheDocument();
+    expect(screen.queryByText('Previous Goal 1')).not.toBeInTheDocument();
+  });
+
+  it('selects suggestion with keyboard navigation', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, 'Goal');
+    await userEvent.keyboard('{ArrowDown}');
+    await userEvent.keyboard('{Enter}');
+
+    expect(defaultProps.onAddGoal).toHaveBeenCalledWith('Previous Goal 1');
+  });
+
+  it('closes suggestions on Escape key', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, 'Goal');
+    expect(screen.getByText('Previous Goal 1')).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Previous Goal 1')).not.toBeInTheDocument();
+    });
   });
 });
