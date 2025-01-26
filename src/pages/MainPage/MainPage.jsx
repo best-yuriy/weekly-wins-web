@@ -223,6 +223,7 @@ const MainPage = ({
                 isEditing={isEditing}
                 onIncrement={handleIncrement}
                 onEdit={handleEditClick}
+                onUpdate={handleUpdateGoal}
                 isLoading={isLoading.incrementGoal}
               />
             </Grid>

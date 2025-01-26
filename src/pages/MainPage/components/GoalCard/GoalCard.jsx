@@ -4,10 +4,27 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import { PlusOne } from '@mui/icons-material';
+import { PlusOne, ExpandMore, ExpandLess } from '@mui/icons-material';
 import TallyMarks from '../TallyMarks/TallyMarks';
+import SubgoalList from '../SubgoalList/SubgoalList';
+import { useState } from 'react';
 
-const GoalCard = ({ goal, isEditing, onIncrement, onEdit, isLoading }) => {
+const GoalCard = ({
+  goal,
+  isEditing,
+  onIncrement,
+  onEdit,
+  onUpdate,
+  isLoading,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasSubgoals = goal.subgoals?.length > 0;
+
+  const handleExpandClick = e => {
+    e.stopPropagation();
+    setExpanded(!expanded);
+  };
+
   return (
     <Paper
       elevation={1}
@@ -15,55 +32,89 @@ const GoalCard = ({ goal, isEditing, onIncrement, onEdit, isLoading }) => {
         cursor: 'pointer',
         p: 2,
         display: 'flex',
+        flexDirection: 'column',
         '&:hover': isEditing ? { bgcolor: 'action.hover' } : {},
       }}
       onClick={() => onEdit(goal)}
       data-testid="goal-card"
     >
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography variant="h6">{goal.title}</Typography>
-        <TallyMarks count={goal.count} />
-      </Box>
-      {!isEditing && (
+      <Box sx={{ display: 'flex', flexDirection: 'row' }}>
         <Box
           sx={{
-            width: '5rem',
-            minWidth: '5rem',
-            ml: 2,
+            flex: 1,
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={e => {
-              e.stopPropagation();
-              onIncrement(goal.id);
-            }}
-            disabled={isLoading}
+          <Typography variant="h6">{goal.title}</Typography>
+          <Box sx={{ height: '42px', display: 'flex', alignItems: 'center' }}>
+            {!expanded ? <TallyMarks count={goal.count} /> : null}
+          </Box>
+        </Box>
+        {!isEditing && (
+          <Box
             sx={{
-              height: '3.5rem',
-              width: '3.5rem',
-              minWidth: '3.5rem',
-              padding: 0,
+              width: '5rem',
+              minWidth: '5rem',
+              ml: 2,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              ml: 'auto',
             }}
           >
-            {isLoading ? <CircularProgress size={20} /> : <PlusOne />}
-          </Button>
-        </Box>
+            {hasSubgoals ? (
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleExpandClick}
+                sx={{
+                  height: '3.5rem',
+                  width: '3.5rem',
+                  minWidth: '3.5rem',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  ml: 'auto',
+                }}
+              >
+                {expanded ? <ExpandLess /> : <ExpandMore />}
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={e => {
+                  e.stopPropagation();
+                  onIncrement(goal.id);
+                }}
+                disabled={isLoading}
+                sx={{
+                  height: '3.5rem',
+                  width: '3.5rem',
+                  minWidth: '3.5rem',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  ml: 'auto',
+                }}
+              >
+                {isLoading ? <CircularProgress size={20} /> : <PlusOne />}
+              </Button>
+            )}
+          </Box>
+        )}
+      </Box>
+      {expanded && hasSubgoals && (
+        <SubgoalList
+          subgoals={goal.subgoals}
+          onChange={updatedSubgoals =>
+            onUpdate({ ...goal, subgoals: updatedSubgoals })
+          }
+        />
       )}
     </Paper>
   );
@@ -74,10 +125,18 @@ GoalCard.propTypes = {
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     count: PropTypes.number.isRequired,
+    subgoals: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        title: PropTypes.string.isRequired,
+        count: PropTypes.number.isRequired,
+      })
+    ),
   }).isRequired,
   isEditing: PropTypes.bool.isRequired,
   onIncrement: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
 };
 
