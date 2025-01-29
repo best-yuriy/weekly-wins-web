@@ -21,7 +21,11 @@ describe('GoalCard', () => {
     ...defaultProps,
     goal: {
       ...defaultProps.goal,
-      subgoals: [{ id: 'subgoal-1', title: 'Subgoal 1', count: 1 }],
+      count: 10, // This should be ignored since subgoals exist
+      subgoals: [
+        { id: 'subgoal-1', title: 'Subgoal 1', count: 2 },
+        { id: 'subgoal-2', title: 'Subgoal 2', count: 3 },
+      ],
     },
   };
 
@@ -30,6 +34,16 @@ describe('GoalCard', () => {
     expect(screen.getByText('Test Goal')).toBeInTheDocument();
     expect(screen.getByTestId('tally-mark')).toBeInTheDocument();
     expect(screen.getByTestId('PlusOneIcon')).toBeInTheDocument();
+  });
+
+  it('displays sum of subgoal counts in parent goal', () => {
+    render(<GoalCard {...propsWithSubgoals} />);
+    // Should show 5 tally marks (2 + 3) instead of parent's count of 10
+    const tallyGroups = screen.getAllByTestId('tally-mark');
+    const totalTallyMarks = tallyGroups.reduce((sum, group) => {
+      return sum + group.querySelectorAll('path').length;
+    }, 0);
+    expect(totalTallyMarks).toBe(5);
   });
 
   it('renders expand button instead of increment button for goals with subgoals', () => {
@@ -45,6 +59,7 @@ describe('GoalCard', () => {
     await userEvent.click(expandButton);
 
     expect(screen.getByText('Subgoal 1')).toBeInTheDocument();
+    expect(screen.getByText('Subgoal 2')).toBeInTheDocument();
     expect(screen.getByTestId('ExpandLessIcon')).toBeInTheDocument();
 
     await userEvent.click(

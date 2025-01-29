@@ -20,6 +20,11 @@ const GoalCard = ({
   const [expanded, setExpanded] = useState(false);
   const hasSubgoals = goal.subgoals?.length > 0;
 
+  // Calculate total from subgoals if they exist
+  const displayCount = hasSubgoals
+    ? goal.subgoals.reduce((sum, subgoal) => sum + subgoal.count, 0)
+    : goal.count;
+
   const handleExpandClick = e => {
     e.stopPropagation();
     setExpanded(!expanded);
@@ -49,7 +54,7 @@ const GoalCard = ({
         >
           <Typography variant="h6">{goal.title}</Typography>
           <Box sx={{ height: '42px', display: 'flex', alignItems: 'center' }}>
-            {!expanded ? <TallyMarks count={goal.count} /> : null}
+            {!expanded ? <TallyMarks count={displayCount} /> : null}
           </Box>
         </Box>
         {!isEditing && (
