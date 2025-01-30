@@ -40,9 +40,10 @@ class GoalsAnalyticsService {
     weeklyGoals.forEach(week => {
       const goal = week.goals.find(g => g.title === goalTitle);
       if (goal) {
-        totalCount += goal.count;
-        bestWeek = Math.max(bestWeek, goal.count);
-        if (goal.count > 0) activeWeeks++;
+        const count = this.getGoalCount(goal);
+        totalCount += count;
+        bestWeek = Math.max(bestWeek, count);
+        if (count > 0) activeWeeks++;
       }
     });
 
@@ -74,11 +75,23 @@ class GoalsAnalyticsService {
 
       // Add goals to the goals object
       week.goals.forEach(goal => {
-        dataPoint.goals[goal.title] = goal.count;
+        // TODO: protect against malicious goal titles
+        dataPoint.goals[goal.title] = this.getGoalCount(goal);
       });
 
       return dataPoint;
     });
+  }
+
+  /**
+   * Gets the effective count for a goal, using subgoals total if they exist
+   * @private
+   */
+  getGoalCount(goal) {
+    if (goal.subgoals?.length > 0) {
+      return goal.subgoals.reduce((sum, subgoal) => sum + subgoal.count, 0);
+    }
+    return goal.count;
   }
 
   /**

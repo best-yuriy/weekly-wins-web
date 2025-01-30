@@ -17,6 +17,26 @@ describe('EditGoalDialog', () => {
     isLoading: { save: false, delete: false },
   };
 
+  const propsWithSubgoals = {
+    ...defaultProps,
+    goal: {
+      ...defaultProps.goal,
+      count: 10, // This should be ignored since subgoals exist
+      subgoals: [
+        { id: 'subgoal-1', title: 'Subgoal 1', count: 2 },
+        { id: 'subgoal-2', title: 'Subgoal 2', count: 3 },
+      ],
+    },
+  };
+
+  it('renders without errors when closed with no goal', () => {
+    render(<EditGoalDialog {...defaultProps} goal={null} isOpen={false} />);
+
+    // Dialog should not be visible
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // No errors should be thrown
+  });
+
   it('renders dialog with goal details', () => {
     render(<EditGoalDialog {...defaultProps} />);
 
@@ -81,5 +101,102 @@ describe('EditGoalDialog', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.getByText('Save')).toBeDisabled();
     expect(screen.getByText('Delete')).toBeDisabled();
+  });
+
+  describe('subgoals', () => {
+    it('shows total count from subgoals in parent count field', () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      const countInput = screen.getByLabelText('Total count (from subgoals)');
+      expect(countInput).toHaveValue(5); // 2 + 3
+      expect(countInput).toBeDisabled();
+    });
+
+    it('allows adding new subgoals', async () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      await userEvent.click(screen.getByTestId('AddIcon').closest('button'));
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...propsWithSubgoals.goal,
+        subgoals: [
+          ...propsWithSubgoals.goal.subgoals,
+          { id: 'new-subgoal-id', title: '', count: 0 },
+        ],
+      });
+    });
+
+    it('allows editing subgoal title and count', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Edit first subgoal
+      const titleInputs = screen.getAllByLabelText('Subgoal title');
+      const countInputs = screen.getAllByLabelText('Count');
+
+      await userEvent.clear(titleInputs[0]);
+      await userEvent.type(titleInputs[0], 'Updated Subgoal');
+      await userEvent.clear(countInputs[0]);
+      await userEvent.type(countInputs[0], '4');
+
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...propsWithSubgoals.goal,
+        subgoals: [
+          {
+            ...propsWithSubgoals.goal.subgoals[0],
+            title: 'Updated Subgoal',
+            count: 4,
+          },
+          propsWithSubgoals.goal.subgoals[1],
+        ],
+      });
+    });
+
+    it('allows deleting subgoals', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Delete first subgoal
+      const deleteButtons = screen.getAllByTestId('DeleteIcon');
+      await userEvent.click(deleteButtons[0].closest('button'));
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...propsWithSubgoals.goal,
+        subgoals: [propsWithSubgoals.goal.subgoals[1]],
+      });
+    });
+
+    it('disables parent count field when subgoals exist', () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      const countInput = screen.getByLabelText('Total count (from subgoals)');
+      expect(countInput).toBeDisabled();
+    });
+
+    it('enables parent count field when all subgoals are deleted', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Delete all subgoals
+      const deleteButtons = screen.getAllByTestId('DeleteIcon');
+      await userEvent.click(deleteButtons[0].closest('button'));
+      await userEvent.click(deleteButtons[1].closest('button'));
+
+      const countInput = screen.getByLabelText('Count');
+      expect(countInput).not.toBeDisabled();
+
+      // Should now be able to edit the count
+      await userEvent.clear(countInput);
+      await userEvent.type(countInput, '7');
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...propsWithSubgoals.goal,
+        subgoals: [],
+        count: 7,
+      });
+    });
   });
 });

@@ -8,7 +8,17 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import Divider from '@mui/material/Divider';
 
+// TODO: Disallow creating subgoals with empty title.
+// TODO: Enforce maximum title length for goals and subgoals.
+// TODO: Enforce maximum number of subgoals.
+// TODO: Transfer parent count to subgoal when the first one is added.
+// TODO: Disallow creating goals or subgoals with negative count.
+// TODO: Keyboard support for adding subgoals with Enter.
 const EditGoalDialog = ({
   goal,
   isOpen,
@@ -18,11 +28,46 @@ const EditGoalDialog = ({
   isLoading = { save: false, delete: false },
 }) => {
   const [editedGoal, setEditedGoal] = useState(goal);
+  const hasSubgoals = editedGoal?.subgoals?.length > 0;
 
-  // Update local state when goal prop changes
+  // Calculate total from subgoals if they exist
+  const displayCount = hasSubgoals
+    ? editedGoal.subgoals.reduce((sum, subgoal) => sum + subgoal.count, 0)
+    : editedGoal?.count || 0;
+
   useEffect(() => {
     setEditedGoal(goal);
   }, [goal]);
+
+  const handleAddSubgoal = () => {
+    setEditedGoal({
+      ...editedGoal,
+      subgoals: [
+        ...(editedGoal.subgoals || []),
+        {
+          id: crypto.randomUUID(),
+          title: '',
+          count: 0,
+        },
+      ],
+    });
+  };
+
+  const handleUpdateSubgoal = (id, updates) => {
+    setEditedGoal({
+      ...editedGoal,
+      subgoals: editedGoal.subgoals.map(subgoal =>
+        subgoal.id === id ? { ...subgoal, ...updates } : subgoal
+      ),
+    });
+  };
+
+  const handleDeleteSubgoal = id => {
+    setEditedGoal({
+      ...editedGoal,
+      subgoals: editedGoal.subgoals.filter(subgoal => subgoal.id !== id),
+    });
+  };
 
   const handleSave = () => {
     onSave(editedGoal);
@@ -50,16 +95,73 @@ const EditGoalDialog = ({
             <TextField
               fullWidth
               type="number"
-              label="Count"
-              value={editedGoal.count}
+              label={hasSubgoals ? 'Total count (from subgoals)' : 'Count'}
+              value={displayCount}
               onChange={e =>
+                !hasSubgoals &&
                 setEditedGoal({
                   ...editedGoal,
                   count: parseInt(e.target.value) || 0,
                 })
               }
+              disabled={hasSubgoals || isLoading.save || isLoading.delete}
               onKeyUp={e => e.key === 'Enter' && handleSave()}
             />
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1">Subgoals</Typography>
+              <IconButton
+                size="small"
+                onClick={handleAddSubgoal}
+                disabled={isLoading.save || isLoading.delete}
+              >
+                <AddIcon />
+              </IconButton>
+            </Box>
+
+            {editedGoal.subgoals?.map(subgoal => (
+              <Box
+                key={subgoal.id}
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <TextField
+                  size="small"
+                  label="Subgoal title"
+                  value={subgoal.title}
+                  onChange={e =>
+                    handleUpdateSubgoal(subgoal.id, { title: e.target.value })
+                  }
+                  sx={{ flex: 1 }}
+                  disabled={isLoading.save || isLoading.delete}
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Count"
+                  value={subgoal.count}
+                  onChange={e =>
+                    handleUpdateSubgoal(subgoal.id, {
+                      count: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  sx={{ width: '100px' }}
+                  disabled={isLoading.save || isLoading.delete}
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => handleDeleteSubgoal(subgoal.id)}
+                  disabled={isLoading.save || isLoading.delete}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            ))}
           </Box>
         )}
       </DialogContent>
@@ -90,6 +192,13 @@ EditGoalDialog.propTypes = {
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     count: PropTypes.number.isRequired,
+    subgoals: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        title: PropTypes.string.isRequired,
+        count: PropTypes.number.isRequired,
+      })
+    ),
   }),
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,

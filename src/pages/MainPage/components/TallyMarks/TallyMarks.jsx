@@ -10,7 +10,7 @@ import {
 
 const TallyMarks = ({ count }) => {
   // If count is greater than 15, just show the number
-  if (count == 0 || count > 15) {
+  if (count === 0 || count > 15) {
     return <Typography variant="h4">{count}</Typography>;
   }
 
@@ -55,13 +55,20 @@ const TallyMarks = ({ count }) => {
     <Box
       sx={{
         display: 'flex',
-        gap: 1,
+        gap: 0.5,
         alignItems: 'center',
-        height: '42px',
-        width: '42px',
+        minWidth: 0,
+        overflow: 'hidden',
       }}
     >
-      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'nowrap',
+          minWidth: 0,
+        }}
+      >
         {getTallyGroups()}
       </Box>
     </Box>
