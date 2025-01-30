@@ -60,8 +60,6 @@ const GoalCard = ({
         {!isEditing && (
           <Box
             sx={{
-              width: '5rem',
-              minWidth: '5rem',
               ml: 2,
               display: 'flex',
               alignItems: 'center',
