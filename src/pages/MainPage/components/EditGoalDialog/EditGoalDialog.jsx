@@ -14,7 +14,6 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH } from '../../../../constants/goals';
 
-// TODO: Disallow creating subgoals with empty title.
 // TODO: Enforce maximum number of subgoals.
 // TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
@@ -30,6 +29,9 @@ const EditGoalDialog = ({
 }) => {
   const [editedGoal, setEditedGoal] = useState(goal);
   const hasSubgoals = editedGoal?.subgoals?.length > 0;
+  const hasEmptySubgoals = editedGoal?.subgoals?.some(
+    subgoal => !subgoal.title.trim()
+  );
 
   // Calculate total from subgoals if they exist
   const displayCount = hasSubgoals
@@ -71,7 +73,9 @@ const EditGoalDialog = ({
   };
 
   const handleSave = () => {
-    onSave(editedGoal);
+    if (!hasEmptySubgoals) {
+      onSave(editedGoal);
+    }
   };
 
   const handleDelete = () => {
@@ -145,6 +149,8 @@ const EditGoalDialog = ({
                   }
                   sx={{ flex: 1 }}
                   disabled={isLoading.save || isLoading.delete}
+                  error={!subgoal.title.trim()}
+                  helperText={!subgoal.title.trim() ? 'Title is required' : ''}
                   slotProps={{
                     htmlInput: {
                       maxLength: MAX_TITLE_LENGTH,
@@ -188,7 +194,7 @@ const EditGoalDialog = ({
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={isLoading.delete || isLoading.save}
+          disabled={isLoading.delete || isLoading.save || hasEmptySubgoals}
           startIcon={isLoading.save ? <CircularProgress size={20} /> : null}
         >
           Save
