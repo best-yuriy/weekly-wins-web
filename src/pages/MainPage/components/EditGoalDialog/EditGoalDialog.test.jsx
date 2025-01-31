@@ -29,6 +29,10 @@ describe('EditGoalDialog', () => {
     },
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders without errors when closed with no goal', () => {
     render(<EditGoalDialog {...defaultProps} goal={null} isOpen={false} />);
 
@@ -136,13 +140,17 @@ describe('EditGoalDialog', () => {
       render(<EditGoalDialog {...propsWithSubgoals} />);
 
       await userEvent.click(screen.getByTestId('AddIcon').closest('button'));
+      await userEvent.type(
+        screen.getAllByLabelText('Subgoal title')[2],
+        'New Subgoal'
+      );
       await userEvent.click(screen.getByText('Save'));
 
       expect(defaultProps.onSave).toHaveBeenCalledWith({
         ...propsWithSubgoals.goal,
         subgoals: [
           ...propsWithSubgoals.goal.subgoals,
-          { id: 'new-subgoal-id', title: '', count: 0 },
+          { id: 'new-subgoal-id', title: 'New Subgoal', count: 0 },
         ],
       });
     });
@@ -215,6 +223,60 @@ describe('EditGoalDialog', () => {
         ...propsWithSubgoals.goal,
         subgoals: [],
         count: 7,
+      });
+    });
+  });
+
+  describe('subgoal validation', () => {
+    it('disables save button when subgoal has empty title', () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Clear first subgoal's title
+      const titleInputs = screen.getAllByLabelText('Subgoal title');
+      userEvent.clear(titleInputs[0]);
+
+      expect(screen.getByText('Save')).toBeDisabled();
+    });
+
+    it('shows error state on empty subgoal title', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Clear first subgoal's title
+      const titleInput = screen.getAllByLabelText('Subgoal title')[0];
+      await userEvent.clear(titleInput);
+
+      expect(titleInput).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText('Title is required')).toBeInTheDocument();
+    });
+
+    it('prevents saving when subgoal has empty title', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Clear first subgoal's title
+      const titleInput = screen.getAllByLabelText('Subgoal title')[0];
+      await userEvent.clear(titleInput);
+
+      // Verify save is disabled and onSave wasn't called
+      expect(screen.getByText('Save')).toBeDisabled();
+      expect(defaultProps.onSave).not.toHaveBeenCalled();
+    });
+
+    it('allows saving when all subgoal titles are filled', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Update first subgoal's title
+      const titleInput = screen.getAllByLabelText('Subgoal title')[0];
+      await userEvent.clear(titleInput);
+      await userEvent.type(titleInput, 'Updated Subgoal');
+
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...propsWithSubgoals.goal,
+        subgoals: [
+          { ...propsWithSubgoals.goal.subgoals[0], title: 'Updated Subgoal' },
+          propsWithSubgoals.goal.subgoals[1],
+        ],
       });
     });
   });
