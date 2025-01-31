@@ -319,4 +319,72 @@ describe('EditGoalDialog', () => {
       expect(finalInputs[2]).toHaveFocus();
     });
   });
+
+  describe('subgoal limit', () => {
+    it('disables add button when maximum subgoals reached', () => {
+      const propsWithMaxSubgoals = {
+        ...defaultProps,
+        goal: {
+          ...defaultProps.goal,
+          subgoals: Array(5)
+            .fill(null)
+            .map((_, index) => ({
+              id: `subgoal-${index}`,
+              title: `Subgoal ${index + 1}`,
+              count: 1,
+            })),
+        },
+      };
+
+      render(<EditGoalDialog {...propsWithMaxSubgoals} />);
+
+      const addButton = screen.getByTestId('AddIcon').closest('button');
+      expect(addButton).toBeDisabled();
+      expect(screen.getByText('Maximum 5 subgoals')).toBeInTheDocument();
+    });
+
+    it('prevents adding subgoals via keyboard when at limit', async () => {
+      const propsWithMaxSubgoals = {
+        ...defaultProps,
+        goal: {
+          ...defaultProps.goal,
+          subgoals: Array(5)
+            .fill(null)
+            .map((_, index) => ({
+              id: `subgoal-${index}`,
+              title: `Subgoal ${index + 1}`,
+              count: 1,
+            })),
+        },
+      };
+
+      render(<EditGoalDialog {...propsWithMaxSubgoals} />);
+
+      const lastInput = screen.getAllByLabelText('Subgoal title')[4];
+      await userEvent.type(lastInput, '{Enter}');
+
+      // Should still have only 5 subgoals
+      expect(screen.getAllByLabelText('Subgoal title')).toHaveLength(5);
+    });
+
+    it('shows maximum subgoals message when limit reached', () => {
+      const propsWithMaxSubgoals = {
+        ...defaultProps,
+        goal: {
+          ...defaultProps.goal,
+          subgoals: Array(5)
+            .fill(null)
+            .map((_, index) => ({
+              id: `subgoal-${index}`,
+              title: `Subgoal ${index + 1}`,
+              count: 1,
+            })),
+        },
+      };
+
+      render(<EditGoalDialog {...propsWithMaxSubgoals} />);
+
+      expect(screen.getByText('Maximum 5 subgoals')).toBeInTheDocument();
+    });
+  });
 });
