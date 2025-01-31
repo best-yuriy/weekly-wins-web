@@ -10,8 +10,7 @@ import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-
-const MAX_TITLE_LENGTH = 50;
+import { MAX_TITLE_LENGTH } from '../../../../constants/goals';
 
 const GoalInput = ({ onAddGoal, isLoading, suggestions = [] }) => {
   const [title, setTitle] = useState('');
