@@ -103,6 +103,25 @@ describe('EditGoalDialog', () => {
     expect(screen.getByText('Delete')).toBeDisabled();
   });
 
+  it('enforces maximum length on goal and subgoal titles', async () => {
+    render(<EditGoalDialog {...propsWithSubgoals} />);
+
+    const longTitle = 'a'.repeat(60); // Longer than MAX_TITLE_LENGTH
+    const expectedTitle = longTitle.slice(0, 50); // Should be truncated
+
+    // Test parent goal title
+    const titleInput = screen.getByLabelText('Goal title');
+    await userEvent.clear(titleInput);
+    await userEvent.type(titleInput, longTitle);
+    expect(titleInput).toHaveValue(expectedTitle);
+
+    // Test subgoal title
+    const subgoalTitleInput = screen.getAllByLabelText('Subgoal title')[0];
+    await userEvent.clear(subgoalTitleInput);
+    await userEvent.type(subgoalTitleInput, longTitle);
+    expect(subgoalTitleInput).toHaveValue(expectedTitle);
+  });
+
   describe('subgoals', () => {
     it('shows total count from subgoals in parent count field', () => {
       render(<EditGoalDialog {...propsWithSubgoals} />);

@@ -11,6 +11,8 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 
+const MAX_TITLE_LENGTH = 50;
+
 const GoalInput = ({ onAddGoal, isLoading, suggestions = [] }) => {
   const [title, setTitle] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
@@ -101,6 +103,11 @@ const GoalInput = ({ onAddGoal, isLoading, suggestions = [] }) => {
         disabled={isLoading}
         size="small"
         sx={{ width: '100%' }}
+        slotProps={{
+          htmlInput: {
+            maxLength: MAX_TITLE_LENGTH,
+          },
+        }}
       />
       <Popper
         open={!!anchorEl && getFilteredSuggestions().length > 0}
