@@ -12,9 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
-import { MAX_TITLE_LENGTH } from '../../../../constants/goals';
+import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: Enforce maximum number of subgoals.
 // TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
 // TODO: Focus on the new subgoal after adding it.
@@ -33,6 +32,7 @@ const EditGoalDialog = ({
     subgoal => !subgoal.title.trim()
   );
   const subgoalRefs = useRef([]);
+  const hasMaxSubgoals = editedGoal?.subgoals?.length >= MAX_SUBGOALS;
 
   // Calculate total from subgoals if they exist
   const displayCount = hasSubgoals
@@ -44,6 +44,8 @@ const EditGoalDialog = ({
   }, [goal]);
 
   const handleAddSubgoal = () => {
+    if (hasMaxSubgoals) return null;
+
     const newSubgoal = {
       id: crypto.randomUUID(),
       title: '',
@@ -59,10 +61,12 @@ const EditGoalDialog = ({
   const handleSubgoalKeyDown = (e, index) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddSubgoal();
-      setTimeout(() => {
-        subgoalRefs.current[index + 1]?.focus();
-      }, 0);
+      if (!hasMaxSubgoals) {
+        handleAddSubgoal();
+        setTimeout(() => {
+          subgoalRefs.current[index + 1]?.focus();
+        }, 0);
+      }
     }
   };
 
@@ -135,10 +139,15 @@ const EditGoalDialog = ({
               <IconButton
                 size="small"
                 onClick={handleAddSubgoal}
-                disabled={isLoading.save || isLoading.delete}
+                disabled={isLoading.save || isLoading.delete || hasMaxSubgoals}
               >
                 <AddIcon />
               </IconButton>
+              {hasMaxSubgoals && (
+                <Typography variant="caption" color="text.secondary">
+                  Maximum {MAX_SUBGOALS} subgoals
+                </Typography>
+              )}
             </Box>
 
             {editedGoal.subgoals?.map((subgoal, index) => (
