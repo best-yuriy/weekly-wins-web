@@ -14,6 +14,8 @@ import EditGoalDialog from './components/EditGoalDialog/EditGoalDialog';
 import WeekSelector from './components/WeekSelector/WeekSelector';
 import GoalInput from './components/GoalInput/GoalInput';
 
+// TODO: Esc to exit edit mode if dialog is already closed.
+
 // Create default instance
 const defaultService = new FirestoreGoalsService();
 

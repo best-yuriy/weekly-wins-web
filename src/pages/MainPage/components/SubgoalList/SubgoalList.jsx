@@ -5,6 +5,8 @@ import Typography from '@mui/material/Typography';
 import { PlusOne } from '@mui/icons-material';
 import TallyMarks from '../TallyMarks/TallyMarks';
 
+// TODO: Loading states for subgoals.
+
 const SubgoalList = ({ subgoals, onChange }) => {
   if (!subgoals?.length) return null;
 

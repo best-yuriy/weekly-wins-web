@@ -280,4 +280,43 @@ describe('EditGoalDialog', () => {
       });
     });
   });
+
+  describe('keyboard navigation for subgoals', () => {
+    it('creates new subgoal and focuses it when pressing Enter', async () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      const subgoalInputs = screen.getAllByLabelText('Subgoal title');
+      const firstInput = subgoalInputs[0];
+
+      // Press Enter in the first subgoal
+      await userEvent.type(firstInput, '{Enter}');
+
+      // Should now have one more input
+      const updatedInputs = screen.getAllByLabelText('Subgoal title');
+      expect(updatedInputs).toHaveLength(subgoalInputs.length + 1);
+
+      // New input should be focused
+      expect(updatedInputs[1]).toHaveFocus();
+    });
+
+    it('maintains focus after adding multiple subgoals', async () => {
+      vi.spyOn(crypto, 'randomUUID')
+        .mockReturnValueOnce('new-subgoal-1')
+        .mockReturnValueOnce('new-subgoal-2');
+
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      // Add two subgoals using Enter
+      const initialInputs = screen.getAllByLabelText('Subgoal title');
+      await userEvent.type(initialInputs[0], '{Enter}');
+
+      const secondInputs = screen.getAllByLabelText('Subgoal title');
+      await userEvent.type(secondInputs[1], '{Enter}');
+
+      const finalInputs = screen.getAllByLabelText('Subgoal title');
+      expect(finalInputs).toHaveLength(initialInputs.length + 2);
+      expect(finalInputs[2]).toHaveFocus();
+    });
+  });
 });
