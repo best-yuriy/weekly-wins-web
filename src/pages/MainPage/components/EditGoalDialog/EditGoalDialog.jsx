@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -17,7 +17,7 @@ import { MAX_TITLE_LENGTH } from '../../../../constants/goals';
 // TODO: Enforce maximum number of subgoals.
 // TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
-// TODO: Keyboard support for adding subgoals with Enter.
+// TODO: Focus on the new subgoal after adding it.
 
 const EditGoalDialog = ({
   goal,
@@ -32,6 +32,7 @@ const EditGoalDialog = ({
   const hasEmptySubgoals = editedGoal?.subgoals?.some(
     subgoal => !subgoal.title.trim()
   );
+  const subgoalRefs = useRef([]);
 
   // Calculate total from subgoals if they exist
   const displayCount = hasSubgoals
@@ -43,17 +44,26 @@ const EditGoalDialog = ({
   }, [goal]);
 
   const handleAddSubgoal = () => {
+    const newSubgoal = {
+      id: crypto.randomUUID(),
+      title: '',
+      count: 0,
+    };
     setEditedGoal({
       ...editedGoal,
-      subgoals: [
-        ...(editedGoal.subgoals || []),
-        {
-          id: crypto.randomUUID(),
-          title: '',
-          count: 0,
-        },
-      ],
+      subgoals: [...(editedGoal.subgoals || []), newSubgoal],
     });
+    return newSubgoal.id;
+  };
+
+  const handleSubgoalKeyDown = (e, index) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSubgoal();
+      setTimeout(() => {
+        subgoalRefs.current[index + 1]?.focus();
+      }, 0);
+    }
   };
 
   const handleUpdateSubgoal = (id, updates) => {
@@ -131,7 +141,7 @@ const EditGoalDialog = ({
               </IconButton>
             </Box>
 
-            {editedGoal.subgoals?.map(subgoal => (
+            {editedGoal.subgoals?.map((subgoal, index) => (
               <Box
                 key={subgoal.id}
                 sx={{
@@ -147,6 +157,8 @@ const EditGoalDialog = ({
                   onChange={e =>
                     handleUpdateSubgoal(subgoal.id, { title: e.target.value })
                   }
+                  onKeyDown={e => handleSubgoalKeyDown(e, index)}
+                  inputRef={el => (subgoalRefs.current[index] = el)}
                   sx={{ flex: 1 }}
                   disabled={isLoading.save || isLoading.delete}
                   error={!subgoal.title.trim()}
