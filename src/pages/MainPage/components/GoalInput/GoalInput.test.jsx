@@ -126,4 +126,15 @@ describe('GoalInput', () => {
       expect(screen.queryByText('Previous Goal 1')).not.toBeInTheDocument();
     });
   });
+
+  it('enforces maximum length on goal title', async () => {
+    render(<GoalInput {...defaultProps} />);
+
+    const longTitle = 'a'.repeat(60); // Longer than MAX_TITLE_LENGTH
+    const expectedTitle = longTitle.slice(0, 50); // Should be truncated
+
+    const input = screen.getByPlaceholderText('Enter new goal');
+    await userEvent.type(input, longTitle);
+    expect(input).toHaveValue(expectedTitle);
+  });
 });

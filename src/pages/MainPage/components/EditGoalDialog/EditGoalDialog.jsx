@@ -14,11 +14,12 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 
 // TODO: Disallow creating subgoals with empty title.
-// TODO: Enforce maximum title length for goals and subgoals.
 // TODO: Enforce maximum number of subgoals.
 // TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
 // TODO: Keyboard support for adding subgoals with Enter.
+const MAX_TITLE_LENGTH = 50;
+
 const EditGoalDialog = ({
   goal,
   isOpen,
@@ -91,6 +92,11 @@ const EditGoalDialog = ({
                 setEditedGoal({ ...editedGoal, title: e.target.value })
               }
               onKeyUp={e => e.key === 'Enter' && handleSave()}
+              slotProps={{
+                htmlInput: {
+                  maxLength: MAX_TITLE_LENGTH,
+                },
+              }}
             />
             <TextField
               fullWidth
@@ -139,6 +145,11 @@ const EditGoalDialog = ({
                   }
                   sx={{ flex: 1 }}
                   disabled={isLoading.save || isLoading.delete}
+                  slotProps={{
+                    htmlInput: {
+                      maxLength: MAX_TITLE_LENGTH,
+                    },
+                  }}
                 />
                 <TextField
                   size="small"
