@@ -12,13 +12,13 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
+import { MAX_TITLE_LENGTH } from '../../../../constants/goals';
 
 // TODO: Disallow creating subgoals with empty title.
 // TODO: Enforce maximum number of subgoals.
 // TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
 // TODO: Keyboard support for adding subgoals with Enter.
-const MAX_TITLE_LENGTH = 50;
 
 const EditGoalDialog = ({
   goal,
