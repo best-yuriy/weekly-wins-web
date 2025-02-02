@@ -14,8 +14,8 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: Disallow creating goals or subgoals with negative count.
 // TODO: Focus on the new subgoal after adding it.
+// TODO: Pressing Enter on an empty subgoal should save the goal without the subgoal.
 
 const EditGoalDialog = ({
   goal,
@@ -126,11 +126,16 @@ const EditGoalDialog = ({
                 !hasSubgoals &&
                 setEditedGoal({
                   ...editedGoal,
-                  count: parseInt(e.target.value) || 0,
+                  count: Math.max(0, parseInt(e.target.value) || 0),
                 })
               }
               disabled={hasSubgoals || isLoading.save || isLoading.delete}
               onKeyUp={e => e.key === 'Enter' && handleSave()}
+              slotProps={{
+                htmlInput: {
+                  min: 0,
+                },
+              }}
             />
 
             <Divider sx={{ my: 1 }} />
@@ -184,13 +189,18 @@ const EditGoalDialog = ({
                   type="number"
                   label="Count"
                   value={subgoal.count}
-                  onChange={e =>
+                  onChange={e => {
                     handleUpdateSubgoal(subgoal.id, {
-                      count: parseInt(e.target.value) || 0,
-                    })
-                  }
+                      count: Math.max(0, parseInt(e.target.value) || 0),
+                    });
+                  }}
                   sx={{ width: '100px' }}
                   disabled={isLoading.save || isLoading.delete}
+                  slotProps={{
+                    htmlInput: {
+                      min: 0,
+                    },
+                  }}
                 />
                 <IconButton
                   size="small"
