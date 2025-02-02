@@ -470,4 +470,35 @@ describe('EditGoalDialog', () => {
       expect(countInputs[1]).toHaveValue(0);
     });
   });
+
+  describe('subgoal focus', () => {
+    it('focuses new subgoal input when clicking add button', async () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...defaultProps} />);
+
+      // verify the first added subgoal is focused
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputsAfterFirstAdd = screen.getAllByLabelText('Subgoal title');
+      expect(inputsAfterFirstAdd[0]).toHaveFocus();
+
+      // verify the second added subgoal is focused
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputsAfterSecondAdd = screen.getAllByLabelText('Subgoal title');
+      expect(inputsAfterSecondAdd[1]).toHaveFocus();
+    });
+
+    it('focuses new subgoal input after creating it with Enter', async () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...defaultProps} />);
+
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      await userEvent.type(screen.getByLabelText('Subgoal title'), '{Enter}');
+
+      const inputsAfterFirstAdd = screen.getAllByLabelText('Subgoal title');
+      expect(inputsAfterFirstAdd[1]).toHaveFocus();
+    });
+  });
 });
