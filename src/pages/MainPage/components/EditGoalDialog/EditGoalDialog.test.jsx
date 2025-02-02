@@ -387,4 +387,53 @@ describe('EditGoalDialog', () => {
       expect(screen.getByText('Maximum 5 subgoals')).toBeInTheDocument();
     });
   });
+
+  describe('subgoal creation', () => {
+    it('transfers parent count to first subgoal', async () => {
+      const goalWithCount = {
+        ...defaultProps.goal,
+        count: 42,
+      };
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...defaultProps} goal={goalWithCount} />);
+
+      // Add first subgoal
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      // Verify the count was transferred
+
+      // The parent input is labeled "Total count (from subgoals)" after the first subgoal is added
+      expect(screen.getByLabelText('Total count (from subgoals)')).toHaveValue(
+        42
+      );
+      // Therefore, the _first_ input labeled "Count" belongs to the first subgoal.
+      const countInputs = screen.getAllByLabelText('Count');
+      expect(countInputs[0]).toHaveValue(42);
+    });
+
+    it('does not transfer parent count to subsequent subgoals', async () => {
+      const goalWithSubgoal = {
+        ...defaultProps.goal,
+        count: 42,
+        subgoals: [
+          { id: 'existing-subgoal', title: 'First Subgoal', count: 42 },
+        ],
+      };
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(<EditGoalDialog {...defaultProps} goal={goalWithSubgoal} />);
+
+      // Add second subgoal
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      // The parent input is labeled "Total count (from subgoals)" when we have subgoals.
+      expect(screen.getByLabelText('Total count (from subgoals)')).toHaveValue(
+        42
+      );
+      const countInputs = screen.getAllByLabelText('Count');
+      // Therefore, the _second_ input labeled "Count" belongs to the second subgoal.
+      expect(countInputs[1]).toHaveValue(0);
+    });
+  });
 });

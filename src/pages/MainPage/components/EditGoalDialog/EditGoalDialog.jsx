@@ -14,7 +14,6 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: Transfer parent count to subgoal when the first one is added.
 // TODO: Disallow creating goals or subgoals with negative count.
 // TODO: Focus on the new subgoal after adding it.
 
@@ -49,8 +48,10 @@ const EditGoalDialog = ({
     const newSubgoal = {
       id: crypto.randomUUID(),
       title: '',
-      count: 0,
+      // Transfer parent count only when this is the first subgoal
+      count: !hasSubgoals ? editedGoal.count : 0,
     };
+
     setEditedGoal({
       ...editedGoal,
       subgoals: [...(editedGoal.subgoals || []), newSubgoal],
