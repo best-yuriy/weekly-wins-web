@@ -14,7 +14,7 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: Pressing Enter on an empty subgoal should save the goal without the subgoal.
+// TODO: When adding a subgoal, focus the last subgoal rather than next subgoal.
 
 const EditGoalDialog = ({
   goal,
@@ -26,9 +26,9 @@ const EditGoalDialog = ({
 }) => {
   const [editedGoal, setEditedGoal] = useState(goal);
   const hasSubgoals = editedGoal?.subgoals?.length > 0;
-  const hasEmptySubgoals = editedGoal?.subgoals?.some(
-    subgoal => !subgoal.title.trim()
-  );
+  const hasEmptySubgoals = editedGoal?.subgoals
+    ?.slice(0, -1)
+    .some(subgoal => !subgoal.title.trim());
   const subgoalRefs = useRef([]);
   const hasMaxSubgoals = editedGoal?.subgoals?.length >= MAX_SUBGOALS;
 
@@ -68,7 +68,18 @@ const EditGoalDialog = ({
   const handleSubgoalKeyDown = (e, index) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (!hasMaxSubgoals) {
+
+      const isLastSubgoal = index === editedGoal.subgoals?.length - 1;
+      const isEmpty = !editedGoal.subgoals[index].title.trim();
+
+      if (isLastSubgoal && isEmpty) {
+        // Save without the empty last subgoal
+        const goalToSave = {
+          ...editedGoal,
+          subgoals: editedGoal.subgoals.slice(0, -1),
+        };
+        onSave(goalToSave);
+      } else if (!hasMaxSubgoals) {
         handleAddSubgoal();
         setTimeout(() => {
           subgoalRefs.current[index + 1]?.focus();
@@ -94,8 +105,19 @@ const EditGoalDialog = ({
   };
 
   const handleSave = () => {
+    // Remove last subgoal if it's empty
+    const lastSubgoal = editedGoal.subgoals?.[editedGoal.subgoals.length - 1];
+    const hasEmptyLastSubgoal = lastSubgoal && !lastSubgoal.title.trim();
+
+    const goalToSave = hasEmptyLastSubgoal
+      ? {
+          ...editedGoal,
+          subgoals: editedGoal.subgoals.slice(0, -1),
+        }
+      : editedGoal;
+
     if (!hasEmptySubgoals) {
-      onSave(editedGoal);
+      onSave(goalToSave);
     }
   };
 

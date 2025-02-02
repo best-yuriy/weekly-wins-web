@@ -495,10 +495,74 @@ describe('EditGoalDialog', () => {
 
       await userEvent.click(screen.getByTestId('AddIcon'));
 
-      await userEvent.type(screen.getByLabelText('Subgoal title'), '{Enter}');
+      await userEvent.type(
+        screen.getByLabelText('Subgoal title'),
+        'New Subgoal{Enter}'
+      );
 
       const inputsAfterFirstAdd = screen.getAllByLabelText('Subgoal title');
       expect(inputsAfterFirstAdd[1]).toHaveFocus();
+    });
+  });
+
+  describe('empty last subgoal handling', () => {
+    it('saves goal without empty last subgoal', async () => {
+      const goalWithEmptyLastSubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: '', count: 0 },
+        ],
+      };
+
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithEmptyLastSubgoal} />
+      );
+
+      await userEvent.click(screen.getByText('Save'));
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...goalWithEmptyLastSubgoal,
+        subgoals: [goalWithEmptyLastSubgoal.subgoals[0]], // Only the non-empty subgoal
+      });
+    });
+
+    it('saves on Enter in empty last subgoal', async () => {
+      const goalWithEmptyLastSubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: '', count: 0 },
+        ],
+      };
+
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithEmptyLastSubgoal} />
+      );
+
+      const lastInput = screen.getAllByLabelText('Subgoal title')[1];
+      await userEvent.type(lastInput, '{Enter}');
+
+      expect(defaultProps.onSave).toHaveBeenCalledWith({
+        ...goalWithEmptyLastSubgoal,
+        subgoals: [goalWithEmptyLastSubgoal.subgoals[0]], // Only the non-empty subgoal
+      });
+    });
+
+    it('still prevents saving with empty non-last subgoals', async () => {
+      const goalWithEmptyMiddleSubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: '', count: 0 }, // Empty middle subgoal
+          { id: 'subgoal-2', title: 'Last Subgoal', count: 1 },
+        ],
+      };
+
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithEmptyMiddleSubgoal} />
+      );
+
+      expect(screen.getByText('Save')).toBeDisabled();
     });
   });
 });
