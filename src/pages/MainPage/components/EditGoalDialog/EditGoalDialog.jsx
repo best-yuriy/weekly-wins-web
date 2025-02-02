@@ -14,7 +14,6 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: Focus on the new subgoal after adding it.
 // TODO: Pressing Enter on an empty subgoal should save the goal without the subgoal.
 
 const EditGoalDialog = ({
@@ -56,6 +55,13 @@ const EditGoalDialog = ({
       ...editedGoal,
       subgoals: [...(editedGoal.subgoals || []), newSubgoal],
     });
+
+    // Focus the new input after render
+    setTimeout(() => {
+      const newIndex = editedGoal.subgoals?.length || 0;
+      subgoalRefs.current[newIndex]?.focus();
+    }, 0);
+
     return newSubgoal.id;
   };
 
