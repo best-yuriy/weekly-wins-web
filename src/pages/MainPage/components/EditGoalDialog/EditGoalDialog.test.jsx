@@ -436,4 +436,38 @@ describe('EditGoalDialog', () => {
       expect(countInputs[1]).toHaveValue(0);
     });
   });
+
+  describe('count validation', () => {
+    it('prevents negative numbers in parent goal count', async () => {
+      render(<EditGoalDialog {...defaultProps} />);
+
+      const countInput = screen.getByLabelText('Count');
+      await userEvent.clear(countInput);
+      await userEvent.type(countInput, '-');
+      await userEvent.type(countInput, '5');
+
+      expect(countInput).toHaveValue(5);
+    });
+
+    it('prevents negative numbers in subgoal counts', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      const countInputs = screen.getAllByLabelText('Count');
+      await userEvent.clear(countInputs[1]); // First subgoal count
+      await userEvent.type(countInputs[1], '-');
+      await userEvent.type(countInputs[1], '5');
+
+      expect(countInputs[1]).toHaveValue(5);
+    });
+
+    it('converts non-numeric input to 0', async () => {
+      render(<EditGoalDialog {...propsWithSubgoals} />);
+
+      const countInputs = screen.getAllByLabelText('Count');
+      await userEvent.clear(countInputs[1]);
+      await userEvent.type(countInputs[1], 'abc');
+
+      expect(countInputs[1]).toHaveValue(0);
+    });
+  });
 });
