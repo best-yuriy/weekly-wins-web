@@ -451,6 +451,42 @@ describe('EditGoalDialog', () => {
       // Therefore, the _second_ input labeled "Count" belongs to the second subgoal.
       expect(countInputs[1]).toHaveValue(0);
     });
+
+    it('focuses first empty subgoal when clicking add button', async () => {
+      const goalWithEmptySubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: '', count: 0 },
+          { id: 'subgoal-3', title: '', count: 0 },
+        ],
+      };
+
+      render(<EditGoalDialog {...defaultProps} goal={goalWithEmptySubgoal} />);
+
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      expect(inputs[1]).toHaveFocus(); // Second subgoal (first empty one)
+    });
+
+    it('creates new subgoal when no empty subgoals exist', async () => {
+      const goalWithFilledSubgoals = {
+        ...defaultProps.goal,
+        subgoals: [{ id: 'subgoal-1', title: 'First Subgoal', count: 1 }],
+      };
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithFilledSubgoals} />
+      );
+
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      expect(inputs).toHaveLength(2);
+      expect(inputs[1]).toHaveFocus(); // New subgoal
+    });
   });
 
   describe('count validation', () => {
@@ -497,6 +533,7 @@ describe('EditGoalDialog', () => {
 
       const inputsAfterFirstAdd = screen.getAllByLabelText('Subgoal title');
       expect(inputsAfterFirstAdd[0]).toHaveFocus();
+      await userEvent.type(inputsAfterFirstAdd[0], 'First Subgoal');
 
       vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id-2');
 
@@ -504,6 +541,7 @@ describe('EditGoalDialog', () => {
       await userEvent.click(screen.getByTestId('AddIcon'));
 
       const inputsAfterSecondAdd = screen.getAllByLabelText('Subgoal title');
+      console.log(inputsAfterSecondAdd);
       expect(inputsAfterSecondAdd[1]).toHaveFocus();
     });
 
