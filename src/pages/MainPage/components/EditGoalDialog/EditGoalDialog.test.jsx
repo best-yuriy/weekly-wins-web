@@ -281,42 +281,58 @@ describe('EditGoalDialog', () => {
     });
   });
 
-  describe('keyboard navigation for subgoals', () => {
-    it('creates new subgoal and focuses it when pressing Enter', async () => {
-      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
-      render(<EditGoalDialog {...propsWithSubgoals} />);
+  describe('subgoal keyboard navigation', () => {
+    it('focuses next subgoal on Enter', async () => {
+      const goalWithSubgoals = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: 'Second Subgoal', count: 1 },
+        ],
+      };
 
-      const subgoalInputs = screen.getAllByLabelText('Subgoal title');
-      const firstInput = subgoalInputs[0];
+      render(<EditGoalDialog {...defaultProps} goal={goalWithSubgoals} />);
 
-      // Press Enter in the first subgoal
-      await userEvent.type(firstInput, '{Enter}');
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      await userEvent.type(inputs[0], '{Enter}');
 
-      // Should now have one more input
-      const updatedInputs = screen.getAllByLabelText('Subgoal title');
-      expect(updatedInputs).toHaveLength(subgoalInputs.length + 1);
-
-      // New input should be focused
-      expect(updatedInputs[1]).toHaveFocus();
+      expect(inputs[1]).toHaveFocus();
     });
 
-    it('maintains focus after adding multiple subgoals', async () => {
-      vi.spyOn(crypto, 'randomUUID')
-        .mockReturnValueOnce('new-subgoal-1')
-        .mockReturnValueOnce('new-subgoal-2');
+    it('does not create new subgoal if current is empty', async () => {
+      const goalWithEmptySubgoal = {
+        ...defaultProps.goal,
+        subgoals: [{ id: 'subgoal-1', title: '', count: 0 }],
+      };
 
-      render(<EditGoalDialog {...propsWithSubgoals} />);
+      render(<EditGoalDialog {...defaultProps} goal={goalWithEmptySubgoal} />);
 
-      // Add two subgoals using Enter
-      const initialInputs = screen.getAllByLabelText('Subgoal title');
-      await userEvent.type(initialInputs[0], '{Enter}');
+      const input = screen.getByLabelText('Subgoal title');
+      await userEvent.type(input, '{Enter}');
 
-      const secondInputs = screen.getAllByLabelText('Subgoal title');
-      await userEvent.type(secondInputs[1], '{Enter}');
+      // Should still have only one subgoal
+      expect(screen.getAllByLabelText('Subgoal title')).toHaveLength(1);
+    });
 
-      const finalInputs = screen.getAllByLabelText('Subgoal title');
-      expect(finalInputs).toHaveLength(initialInputs.length + 2);
-      expect(finalInputs[2]).toHaveFocus();
+    it('does not create new subgoal if next subgoal is empty', async () => {
+      const goalWithEmptyNextSubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: '', count: 0 },
+        ],
+      };
+
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithEmptyNextSubgoal} />
+      );
+
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      await userEvent.type(inputs[0], '{Enter}');
+
+      // Should focus next subgoal but not create a new one
+      expect(inputs[1]).toHaveFocus();
+      expect(screen.getAllByLabelText('Subgoal title')).toHaveLength(2);
     });
   });
 
@@ -435,6 +451,42 @@ describe('EditGoalDialog', () => {
       // Therefore, the _second_ input labeled "Count" belongs to the second subgoal.
       expect(countInputs[1]).toHaveValue(0);
     });
+
+    it('focuses first empty subgoal when clicking add button', async () => {
+      const goalWithEmptySubgoal = {
+        ...defaultProps.goal,
+        subgoals: [
+          { id: 'subgoal-1', title: 'First Subgoal', count: 1 },
+          { id: 'subgoal-2', title: '', count: 0 },
+          { id: 'subgoal-3', title: '', count: 0 },
+        ],
+      };
+
+      render(<EditGoalDialog {...defaultProps} goal={goalWithEmptySubgoal} />);
+
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      expect(inputs[1]).toHaveFocus(); // Second subgoal (first empty one)
+    });
+
+    it('creates new subgoal when no empty subgoals exist', async () => {
+      const goalWithFilledSubgoals = {
+        ...defaultProps.goal,
+        subgoals: [{ id: 'subgoal-1', title: 'First Subgoal', count: 1 }],
+      };
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      render(
+        <EditGoalDialog {...defaultProps} goal={goalWithFilledSubgoals} />
+      );
+
+      await userEvent.click(screen.getByTestId('AddIcon'));
+
+      const inputs = screen.getAllByLabelText('Subgoal title');
+      expect(inputs).toHaveLength(2);
+      expect(inputs[1]).toHaveFocus(); // New subgoal
+    });
   });
 
   describe('count validation', () => {
@@ -473,7 +525,7 @@ describe('EditGoalDialog', () => {
 
   describe('subgoal focus', () => {
     it('focuses new subgoal input when clicking add button', async () => {
-      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id-1');
       render(<EditGoalDialog {...defaultProps} />);
 
       // verify the first added subgoal is focused
@@ -481,19 +533,25 @@ describe('EditGoalDialog', () => {
 
       const inputsAfterFirstAdd = screen.getAllByLabelText('Subgoal title');
       expect(inputsAfterFirstAdd[0]).toHaveFocus();
+      await userEvent.type(inputsAfterFirstAdd[0], 'First Subgoal');
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id-2');
 
       // verify the second added subgoal is focused
       await userEvent.click(screen.getByTestId('AddIcon'));
 
       const inputsAfterSecondAdd = screen.getAllByLabelText('Subgoal title');
+      console.log(inputsAfterSecondAdd);
       expect(inputsAfterSecondAdd[1]).toHaveFocus();
     });
 
     it('focuses new subgoal input after creating it with Enter', async () => {
-      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id');
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id-1');
       render(<EditGoalDialog {...defaultProps} />);
 
       await userEvent.click(screen.getByTestId('AddIcon'));
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('new-subgoal-id-2');
 
       await userEvent.type(
         screen.getByLabelText('Subgoal title'),

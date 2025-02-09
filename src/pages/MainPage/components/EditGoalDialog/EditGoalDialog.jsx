@@ -14,8 +14,6 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-// TODO: When adding a subgoal, focus the last subgoal rather than next subgoal.
-
 const EditGoalDialog = ({
   goal,
   isOpen,
@@ -32,6 +30,10 @@ const EditGoalDialog = ({
   const subgoalRefs = useRef([]);
   const hasMaxSubgoals = editedGoal?.subgoals?.length >= MAX_SUBGOALS;
 
+  const hasEmptySubgoal = editedGoal?.subgoals?.some(
+    subgoal => !subgoal.title.trim()
+  );
+
   // Calculate total from subgoals if they exist
   const displayCount = hasSubgoals
     ? editedGoal.subgoals.reduce((sum, subgoal) => sum + subgoal.count, 0)
@@ -44,10 +46,23 @@ const EditGoalDialog = ({
   const handleAddSubgoal = () => {
     if (hasMaxSubgoals) return null;
 
+    // Find first empty subgoal
+    const emptySubgoalIndex = editedGoal?.subgoals?.findIndex(
+      subgoal => !subgoal.title.trim()
+    );
+
+    if (editedGoal?.subgoals && emptySubgoalIndex !== -1) {
+      // Focus existing empty subgoal
+      setTimeout(() => {
+        subgoalRefs.current[emptySubgoalIndex]?.focus();
+      }, 0);
+      return null;
+    }
+
+    // Create new subgoal if none are empty
     const newSubgoal = {
       id: crypto.randomUUID(),
       title: '',
-      // Transfer parent count only when this is the first subgoal
       count: !hasSubgoals ? editedGoal.count : 0,
     };
 
@@ -71,6 +86,7 @@ const EditGoalDialog = ({
 
       const isLastSubgoal = index === editedGoal.subgoals?.length - 1;
       const isEmpty = !editedGoal.subgoals[index].title.trim();
+      const nextSubgoalExists = index < editedGoal.subgoals?.length - 1;
 
       if (isLastSubgoal && isEmpty) {
         // Save without the empty last subgoal
@@ -79,11 +95,12 @@ const EditGoalDialog = ({
           subgoals: editedGoal.subgoals.slice(0, -1),
         };
         onSave(goalToSave);
-      } else if (!hasMaxSubgoals) {
+      } else if (nextSubgoalExists) {
+        // Focus next existing subgoal
+        subgoalRefs.current[index + 1]?.focus();
+      } else if (!hasMaxSubgoals && !isEmpty && !hasEmptySubgoal) {
+        // Add new subgoal only if current one isn't empty and no empty subgoals exist
         handleAddSubgoal();
-        setTimeout(() => {
-          subgoalRefs.current[index + 1]?.focus();
-        }, 0);
       }
     }
   };
