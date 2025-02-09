@@ -71,6 +71,9 @@ const EditGoalDialog = ({
 
       const isLastSubgoal = index === editedGoal.subgoals?.length - 1;
       const isEmpty = !editedGoal.subgoals[index].title.trim();
+      const nextSubgoalExists = index < editedGoal.subgoals?.length - 1;
+      const nextSubgoalIsEmpty =
+        nextSubgoalExists && !editedGoal.subgoals[index + 1].title.trim();
 
       if (isLastSubgoal && isEmpty) {
         // Save without the empty last subgoal
@@ -79,7 +82,11 @@ const EditGoalDialog = ({
           subgoals: editedGoal.subgoals.slice(0, -1),
         };
         onSave(goalToSave);
-      } else if (!hasMaxSubgoals) {
+      } else if (nextSubgoalExists) {
+        // Focus next existing subgoal
+        subgoalRefs.current[index + 1]?.focus();
+      } else if (!hasMaxSubgoals && !nextSubgoalIsEmpty && !isEmpty) {
+        // Add new subgoal only if current one isn't empty and there's no empty subgoal ahead
         handleAddSubgoal();
         setTimeout(() => {
           subgoalRefs.current[index + 1]?.focus();
