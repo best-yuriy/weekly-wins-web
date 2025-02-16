@@ -21,6 +21,9 @@ npm install
 2. Run development server:
 
 ```bash
+# in first terminal
+firebase emulators:start --import .firebase-emulators-data --only auth,firestore
+# in second terminal
 npm run dev
 ```
 
@@ -32,6 +35,13 @@ Run tests with:
 npm test           # Watch mode
 npm run test:unit  # Run unit tests once
 npm run test:ci    # Run all tests including emulator tests
+```
+
+For running specific tests:
+
+```bash
+npm run test:unit -- SUITE_PATTERN
+npm run test:unit -- SUITE_PATTERN -t TEST_CASE_PATTERN
 ```
 
 ## Release Process
