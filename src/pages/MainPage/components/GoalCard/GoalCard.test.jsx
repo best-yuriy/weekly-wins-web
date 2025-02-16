@@ -11,7 +11,6 @@ describe('GoalCard', () => {
       count: 2,
     },
     isEditing: false,
-    onIncrement: vi.fn(),
     onEdit: vi.fn(),
     onUpdate: vi.fn(),
     isLoading: false,
@@ -68,11 +67,14 @@ describe('GoalCard', () => {
     expect(screen.queryByText('Subgoal 1')).not.toBeInTheDocument();
   });
 
-  it('calls onIncrement when plus button is clicked', async () => {
+  it('calls onUpdate when plus button is clicked', async () => {
     render(<GoalCard {...defaultProps} />);
     const plusButton = screen.getByTestId('PlusOneIcon').closest('button');
     await userEvent.click(plusButton);
-    expect(defaultProps.onIncrement).toHaveBeenCalledWith('test-id');
+    expect(defaultProps.onUpdate).toHaveBeenCalledWith({
+      ...defaultProps.goal,
+      count: defaultProps.goal.count + 1,
+    });
     expect(defaultProps.onEdit).not.toHaveBeenCalled(); // Ensure click doesn't bubble
   });
 

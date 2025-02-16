@@ -120,35 +120,6 @@ const MainPage = ({
     }
   };
 
-  const handleIncrement = async goalId => {
-    if (!isEditing) {
-      setIsLoading(prev => ({ ...prev, incrementGoal: true }));
-      try {
-        const goal = weeklyGoals[selectedWeek].find(g => g.id === goalId);
-        await goalsService.updateGoal(selectedWeek, {
-          ...goal,
-          count: goal.count + 1,
-        });
-
-        const goals = await goalsService.getWeeklyGoals(selectedWeek);
-        setWeeklyGoals(prev => ({
-          ...prev,
-          [selectedWeek]: goals,
-        }));
-      } catch (error) {
-        console.error('Failed to increment goal:', error);
-      } finally {
-        setIsLoading(prev => ({ ...prev, incrementGoal: false }));
-      }
-    }
-  };
-
-  const handleEditClick = goal => {
-    if (isEditing) {
-      setEditingGoal(goal);
-    }
-  };
-
   const handleUpdateGoal = async updatedGoal => {
     setIsLoading(prev => ({ ...prev, updateGoal: true }));
     try {
@@ -158,12 +129,20 @@ const MainPage = ({
         ...prev,
         [selectedWeek]: goals,
       }));
-      setEditingGoal(null);
-      setIsEditing(false);
+      if (editingGoal) {
+        setEditingGoal(null);
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error('Failed to update goal:', error);
     } finally {
       setIsLoading(prev => ({ ...prev, updateGoal: false }));
+    }
+  };
+
+  const handleEditClick = goal => {
+    if (isEditing) {
+      setEditingGoal(goal);
     }
   };
 
@@ -223,10 +202,9 @@ const MainPage = ({
               <GoalCard
                 goal={goal}
                 isEditing={isEditing}
-                onIncrement={handleIncrement}
                 onEdit={handleEditClick}
                 onUpdate={handleUpdateGoal}
-                isLoading={isLoading.incrementGoal}
+                isLoading={isLoading.updateGoal}
               />
             </Grid>
           ))}

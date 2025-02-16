@@ -9,14 +9,7 @@ import TallyMarks from '../TallyMarks/TallyMarks';
 import SubgoalList from '../SubgoalList/SubgoalList';
 import { useState } from 'react';
 
-const GoalCard = ({
-  goal,
-  isEditing,
-  onIncrement,
-  onEdit,
-  onUpdate,
-  isLoading,
-}) => {
+const GoalCard = ({ goal, isEditing, onEdit, onUpdate, isLoading }) => {
   const [expanded, setExpanded] = useState(false);
   const hasSubgoals = goal.subgoals?.length > 0;
 
@@ -90,7 +83,7 @@ const GoalCard = ({
                 variant="contained"
                 onClick={e => {
                   e.stopPropagation();
-                  onIncrement(goal.id);
+                  onUpdate({ ...goal, count: goal.count + 1 });
                 }}
                 disabled={isLoading}
                 sx={{
@@ -137,7 +130,6 @@ GoalCard.propTypes = {
     ),
   }).isRequired,
   isEditing: PropTypes.bool.isRequired,
-  onIncrement: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
