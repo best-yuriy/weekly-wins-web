@@ -541,7 +541,6 @@ describe('EditGoalDialog', () => {
       await userEvent.click(screen.getByTestId('AddIcon'));
 
       const inputsAfterSecondAdd = screen.getAllByLabelText('Subgoal title');
-      console.log(inputsAfterSecondAdd);
       expect(inputsAfterSecondAdd[1]).toHaveFocus();
     });
 
