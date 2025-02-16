@@ -63,6 +63,7 @@ const GoalCard = ({ goal, isEditing, onEdit, onUpdate, isLoading }) => {
                 fullWidth
                 variant="outlined"
                 onClick={handleExpandClick}
+                disabled={isLoading}
                 sx={{
                   height: '3.5rem',
                   width: '3.5rem',
@@ -110,6 +111,7 @@ const GoalCard = ({ goal, isEditing, onEdit, onUpdate, isLoading }) => {
           onChange={updatedSubgoals =>
             onUpdate({ ...goal, subgoals: updatedSubgoals })
           }
+          isLoading={isLoading}
         />
       )}
     </Paper>

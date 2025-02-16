@@ -7,21 +7,13 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import Divider from '@mui/material/Divider';
 import { MAX_TITLE_LENGTH, MAX_SUBGOALS } from '../../../../constants/goals';
 
-const EditGoalDialog = ({
-  goal,
-  isOpen,
-  onClose,
-  onSave,
-  onDelete,
-  isLoading = { save: false, delete: false },
-}) => {
+const EditGoalDialog = ({ goal, isOpen, onClose, onSave, onDelete }) => {
   const [editedGoal, setEditedGoal] = useState(goal);
   const hasSubgoals = editedGoal?.subgoals?.length > 0;
   const hasEmptySubgoals = editedGoal?.subgoals
@@ -174,7 +166,7 @@ const EditGoalDialog = ({
                   count: Math.max(0, parseInt(e.target.value) || 0),
                 })
               }
-              disabled={hasSubgoals || isLoading.save || isLoading.delete}
+              disabled={hasSubgoals}
               onKeyUp={e => e.key === 'Enter' && handleSave()}
               slotProps={{
                 htmlInput: {
@@ -190,7 +182,7 @@ const EditGoalDialog = ({
               <IconButton
                 size="small"
                 onClick={handleAddSubgoal}
-                disabled={isLoading.save || isLoading.delete || hasMaxSubgoals}
+                disabled={hasMaxSubgoals}
               >
                 <AddIcon />
               </IconButton>
@@ -220,7 +212,6 @@ const EditGoalDialog = ({
                   onKeyDown={e => handleSubgoalKeyDown(e, index)}
                   inputRef={el => (subgoalRefs.current[index] = el)}
                   sx={{ flex: 1 }}
-                  disabled={isLoading.save || isLoading.delete}
                   error={!subgoal.title.trim()}
                   helperText={!subgoal.title.trim() ? 'Title is required' : ''}
                   slotProps={{
@@ -240,7 +231,6 @@ const EditGoalDialog = ({
                     });
                   }}
                   sx={{ width: '100px' }}
-                  disabled={isLoading.save || isLoading.delete}
                   slotProps={{
                     htmlInput: {
                       min: 0,
@@ -250,7 +240,6 @@ const EditGoalDialog = ({
                 <IconButton
                   size="small"
                   onClick={() => handleDeleteSubgoal(subgoal.id)}
-                  disabled={isLoading.save || isLoading.delete}
                 >
                   <DeleteIcon />
                 </IconButton>
@@ -260,19 +249,13 @@ const EditGoalDialog = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          color="error"
-          onClick={handleDelete}
-          disabled={isLoading.delete || isLoading.save}
-          startIcon={isLoading.delete ? <CircularProgress size={20} /> : null}
-        >
+        <Button color="error" onClick={handleDelete}>
           Delete
         </Button>
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={isLoading.delete || isLoading.save || hasEmptySubgoals}
-          startIcon={isLoading.save ? <CircularProgress size={20} /> : null}
+          disabled={hasEmptySubgoals}
         >
           Save
         </Button>
@@ -298,10 +281,6 @@ EditGoalDialog.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-  isLoading: PropTypes.shape({
-    save: PropTypes.bool,
-    delete: PropTypes.bool,
-  }),
 };
 
 export default EditGoalDialog;

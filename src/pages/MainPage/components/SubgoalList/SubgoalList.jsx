@@ -4,10 +4,11 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { PlusOne } from '@mui/icons-material';
 import TallyMarks from '../TallyMarks/TallyMarks';
+import { CircularProgress } from '@mui/material';
 
 // TODO: Loading states for subgoals.
 
-const SubgoalList = ({ subgoals, onChange }) => {
+const SubgoalList = ({ subgoals, onChange, isLoading }) => {
   if (!subgoals?.length) return null;
 
   const handleIncrement = (subgoalId, e) => {
@@ -50,6 +51,7 @@ const SubgoalList = ({ subgoals, onChange }) => {
             size="small"
             variant="outlined"
             onClick={e => handleIncrement(subgoal.id, e)}
+            disabled={isLoading}
             sx={{
               minWidth: '32px',
               width: '32px',
@@ -59,7 +61,11 @@ const SubgoalList = ({ subgoals, onChange }) => {
               flex: '0 0 auto',
             }}
           >
-            <PlusOne fontSize="small" />
+            {isLoading ? (
+              <CircularProgress size={16} />
+            ) : (
+              <PlusOne fontSize="small" />
+            )}
           </Button>
         </Box>
       ))}
@@ -76,6 +82,7 @@ SubgoalList.propTypes = {
     })
   ),
   onChange: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired,
 };
 
 export default SubgoalList;
