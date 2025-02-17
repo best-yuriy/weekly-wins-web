@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SubgoalList from './SubgoalList';
 
@@ -10,6 +10,7 @@ describe('SubgoalList', () => {
       { id: 'subgoal-2', title: 'Subgoal 2', count: 3 },
     ],
     onChange: vi.fn(),
+    isLoading: false,
   };
 
   it('renders all subgoals with their titles and counts', () => {
@@ -41,5 +42,18 @@ describe('SubgoalList', () => {
   it('returns null when subgoals is undefined', () => {
     const { container } = render(<SubgoalList onChange={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('disables increment buttons and shows loading state when loading', () => {
+    render(<SubgoalList {...defaultProps} isLoading={true} />);
+
+    // Get all increment buttons
+    const buttons = screen.getAllByRole('button');
+
+    // Verify each button is disabled and shows loading state
+    buttons.forEach(button => {
+      expect(button).toBeDisabled();
+      expect(within(button).getByRole('progressbar')).toBeInTheDocument();
+    });
   });
 });

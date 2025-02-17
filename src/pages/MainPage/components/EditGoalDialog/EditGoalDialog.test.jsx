@@ -14,7 +14,6 @@ describe('EditGoalDialog', () => {
     onClose: vi.fn(),
     onSave: vi.fn(),
     onDelete: vi.fn(),
-    isLoading: { save: false, delete: false },
   };
 
   const propsWithSubgoals = {
@@ -89,22 +88,6 @@ describe('EditGoalDialog', () => {
       ...defaultProps.goal,
       count: 5,
     });
-  });
-
-  it('shows loading state and disables buttons when saving', () => {
-    render(<EditGoalDialog {...defaultProps} isLoading={{ save: true }} />);
-
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    expect(screen.getByText('Save')).toBeDisabled();
-    expect(screen.getByText('Delete')).toBeDisabled();
-  });
-
-  it('shows loading state and disables buttons when deleting', () => {
-    render(<EditGoalDialog {...defaultProps} isLoading={{ delete: true }} />);
-
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    expect(screen.getByText('Save')).toBeDisabled();
-    expect(screen.getByText('Delete')).toBeDisabled();
   });
 
   it('enforces maximum length on goal and subgoal titles', async () => {

@@ -28,19 +28,13 @@ const MainPage = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
-  const [isLoading, setIsLoading] = useState({
-    weeks: false,
-    goals: false,
-    addGoal: false,
-    updateGoal: false,
-    incrementGoal: false,
-    deleteGoal: false,
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
   // Load available weeks
   useEffect(() => {
     const loadWeeks = async () => {
-      setIsLoading(prev => ({ ...prev, weeks: true }));
+      setIsLoading(true);
       try {
         const weeks = await goalsService.getAvailableWeeks();
         const currentWeek = getCurrentWeekKey();
@@ -51,7 +45,7 @@ const MainPage = ({
       } catch (error) {
         console.error('Failed to load weeks:', error);
       } finally {
-        setIsLoading(prev => ({ ...prev, weeks: false }));
+        setIsLoading(false);
       }
     };
     loadWeeks();
@@ -60,7 +54,8 @@ const MainPage = ({
   // Load goals for selected week
   useEffect(() => {
     const loadGoals = async () => {
-      setIsLoading(prev => ({ ...prev, goals: true }));
+      setIsLoadingInitial(true);
+      setIsLoading(true);
       try {
         const goals = await goalsService.getWeeklyGoals(selectedWeek);
         setWeeklyGoals(prev => ({
@@ -70,7 +65,8 @@ const MainPage = ({
       } catch (error) {
         console.error('Failed to load goals:', error);
       } finally {
-        setIsLoading(prev => ({ ...prev, goals: false }));
+        setIsLoadingInitial(false);
+        setIsLoading(false);
       }
     };
     loadGoals();
@@ -100,13 +96,13 @@ const MainPage = ({
   }, [goalsService, weeklyGoals, selectedWeek]);
 
   const handleAddGoal = async title => {
-    setIsLoading(prev => ({ ...prev, addGoal: true }));
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       await goalsService.addGoal(selectedWeek, {
         title,
         count: 0,
       });
-
       const goals = await goalsService.getWeeklyGoals(selectedWeek);
       setWeeklyGoals(prev => ({
         ...prev,
@@ -116,30 +112,29 @@ const MainPage = ({
       console.error('Failed to add goal:', error);
       throw error;
     } finally {
-      setIsLoading(prev => ({ ...prev, addGoal: false }));
+      setIsLoading(false);
     }
   };
 
-  const handleIncrement = async goalId => {
-    if (!isEditing) {
-      setIsLoading(prev => ({ ...prev, incrementGoal: true }));
-      try {
-        const goal = weeklyGoals[selectedWeek].find(g => g.id === goalId);
-        await goalsService.updateGoal(selectedWeek, {
-          ...goal,
-          count: goal.count + 1,
-        });
-
-        const goals = await goalsService.getWeeklyGoals(selectedWeek);
-        setWeeklyGoals(prev => ({
-          ...prev,
-          [selectedWeek]: goals,
-        }));
-      } catch (error) {
-        console.error('Failed to increment goal:', error);
-      } finally {
-        setIsLoading(prev => ({ ...prev, incrementGoal: false }));
-      }
+  const handleUpdateGoal = async updatedGoal => {
+    if (isLoading) return;
+    setIsLoading(true);
+    // Close dialog immediately
+    if (editingGoal) {
+      setEditingGoal(null);
+      setIsEditing(false);
+    }
+    try {
+      await goalsService.updateGoal(selectedWeek, updatedGoal);
+      const goals = await goalsService.getWeeklyGoals(selectedWeek);
+      setWeeklyGoals(prev => ({
+        ...prev,
+        [selectedWeek]: goals,
+      }));
+    } catch (error) {
+      console.error('Failed to update goal:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -149,26 +144,12 @@ const MainPage = ({
     }
   };
 
-  const handleUpdateGoal = async updatedGoal => {
-    setIsLoading(prev => ({ ...prev, updateGoal: true }));
-    try {
-      await goalsService.updateGoal(selectedWeek, updatedGoal);
-      const goals = await goalsService.getWeeklyGoals(selectedWeek);
-      setWeeklyGoals(prev => ({
-        ...prev,
-        [selectedWeek]: goals,
-      }));
-      setEditingGoal(null);
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to update goal:', error);
-    } finally {
-      setIsLoading(prev => ({ ...prev, updateGoal: false }));
-    }
-  };
-
   const handleDeleteGoal = async goalId => {
-    setIsLoading(prev => ({ ...prev, deleteGoal: true }));
+    if (isLoading) return;
+    setIsLoading(true);
+    // Close dialog immediately
+    setEditingGoal(null);
+    setIsEditing(false);
     try {
       await goalsService.deleteGoal(selectedWeek, goalId);
       const goals = await goalsService.getWeeklyGoals(selectedWeek);
@@ -176,12 +157,10 @@ const MainPage = ({
         ...prev,
         [selectedWeek]: goals,
       }));
-      setEditingGoal(null);
-      setIsEditing(false);
     } catch (error) {
       console.error('Failed to delete goal:', error);
     } finally {
-      setIsLoading(prev => ({ ...prev, deleteGoal: false }));
+      setIsLoading(false);
     }
   };
 
@@ -208,11 +187,11 @@ const MainPage = ({
 
       <GoalInput
         onAddGoal={handleAddGoal}
-        isLoading={isLoading.addGoal}
+        isLoading={isLoading}
         suggestions={suggestions}
       />
 
-      {isLoading.goals ? (
+      {isLoadingInitial ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
         </Box>
@@ -223,10 +202,9 @@ const MainPage = ({
               <GoalCard
                 goal={goal}
                 isEditing={isEditing}
-                onIncrement={handleIncrement}
                 onEdit={handleEditClick}
                 onUpdate={handleUpdateGoal}
-                isLoading={isLoading.incrementGoal}
+                isLoading={isLoading}
               />
             </Grid>
           ))}
@@ -239,10 +217,6 @@ const MainPage = ({
         onClose={() => setEditingGoal(null)}
         onSave={handleUpdateGoal}
         onDelete={handleDeleteGoal}
-        isLoading={{
-          save: isLoading.updateGoal,
-          delete: isLoading.deleteGoal,
-        }}
       />
     </Container>
   );

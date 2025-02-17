@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MainPage from './MainPage';
 import InMemoryGoalsService from '../../services/goals/InMemoryGoalsService';
@@ -161,6 +161,10 @@ describe('MainPage', () => {
       service.addGoal('2024-03-18', testGoal);
       render(<MainPage goalsService={service} />);
 
+      await waitFor(() => {
+        expect(screen.getByText('Add')).toBeEnabled();
+      });
+
       // Add a goal via GoalInput
       await userEvent.type(
         screen.getByPlaceholderText('Enter new goal'),
@@ -265,6 +269,10 @@ describe('MainPage', () => {
 
       render(<MainPage goalsService={service} />);
 
+      await waitFor(() => {
+        expect(screen.getByText('Add')).toBeEnabled();
+      });
+
       const input = screen.getByPlaceholderText('Enter new goal');
       const addButton = screen.getByText('Add');
 
@@ -320,6 +328,11 @@ describe('MainPage', () => {
       const service = new InMemoryGoalsService();
       render(<MainPage goalsService={service} />);
 
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      });
+
       const input = screen.getByPlaceholderText('Enter new goal');
       const addButton = screen.getByText('Add');
 
@@ -328,6 +341,7 @@ describe('MainPage', () => {
       service._getBarrier('addGoal');
       const addPromise = userEvent.click(addButton);
 
+      // Verify loading state
       await waitFor(() => {
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
         expect(addButton).toBeDisabled();
@@ -348,27 +362,53 @@ describe('MainPage', () => {
 
       render(<MainPage goalsService={service} />);
 
+      await waitFor(() => {
+        expect(screen.getByText('Test Goal')).toBeInTheDocument();
+      });
+
       // Enter edit mode and click the goal
       await userEvent.click(screen.getByText('Edit'));
       await userEvent.click(screen.getByText('Test Goal'));
 
+      // Wait for dialog to appear
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
       const saveButton = screen.getByText('Save');
 
       service._getBarrier('updateGoal');
-      const updatePromise = userEvent.click(saveButton);
+      await userEvent.click(saveButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
-        expect(saveButton).toBeDisabled();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(saveButton).not.toBeInTheDocument();
       });
 
-      service.resolveOperation('updateGoal');
-      await updatePromise;
+      // Find the goal card first
+      const goalCard = screen.getByTestId('goal-card');
+      expect(screen.getByText('Test Goal')).toBeInTheDocument();
 
-      // Wait for all updates to complete
+      // Then find the plus button and verify it shows loading state
+      const plusButton = within(goalCard).getByRole('button');
+      expect(within(plusButton).getByRole('progressbar')).toBeInTheDocument();
+      expect(plusButton).toBeDisabled();
+      expect(
+        within(plusButton).queryByTestId('PlusOneIcon')
+      ).not.toBeInTheDocument();
+
+      service.resolveOperation('updateGoal');
+
       await waitFor(() => {
-        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        const goalCard = screen.getByTestId('goal-card');
+        const plusButton = within(goalCard).getByRole('button');
+        expect(
+          within(plusButton).queryByRole('progressbar')
+        ).not.toBeInTheDocument();
+        expect(plusButton).not.toBeDisabled();
+        expect(
+          within(plusButton).getByTestId('PlusOneIcon')
+        ).toBeInTheDocument();
       });
     });
 
@@ -378,28 +418,44 @@ describe('MainPage', () => {
 
       render(<MainPage goalsService={service} />);
 
+      await waitFor(() => {
+        expect(screen.getByText('Test Goal')).toBeInTheDocument();
+      });
+
       // Enter edit mode and click the goal
       await userEvent.click(screen.getByText('Edit'));
       await userEvent.click(screen.getByText('Test Goal'));
 
+      // Wait for dialog to appear
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
       const deleteButton = screen.getByText('Delete');
 
       service._getBarrier('deleteGoal');
-      const deletePromise = userEvent.click(deleteButton);
+      await userEvent.click(deleteButton);
 
+      // Dialog should close immediately
       await waitFor(() => {
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
-        expect(deleteButton).toBeDisabled();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(deleteButton).not.toBeInTheDocument();
       });
 
-      service.resolveOperation('deleteGoal');
-      await deletePromise;
+      // Goal card should still be visible with loading state
+      const goalCard = screen.getByTestId('goal-card');
+      const plusButton = within(goalCard).getByRole('button');
+      expect(within(plusButton).getByRole('progressbar')).toBeInTheDocument();
+      expect(plusButton).toBeDisabled();
+      expect(
+        within(plusButton).queryByTestId('PlusOneIcon')
+      ).not.toBeInTheDocument();
 
-      // Wait for all updates to complete
+      service.resolveOperation('deleteGoal');
+
+      // Wait for goal to be removed
       await waitFor(() => {
-        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-        expect(screen.queryByText('Test Goal')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('goal-card')).not.toBeInTheDocument();
       });
     });
 
@@ -413,22 +469,30 @@ describe('MainPage', () => {
         expect(screen.getByText('Test Goal')).toBeInTheDocument();
       });
 
-      const plusButton = screen.getByTestId('PlusOneIcon').closest('button');
+      const goalCard = screen.getByTestId('goal-card');
+      const plusButton = within(goalCard).getByRole('button');
+      expect(within(plusButton).getByTestId('PlusOneIcon')).toBeInTheDocument();
 
       service._getBarrier('updateGoal');
-      const incrementPromise = userEvent.click(plusButton);
+      await userEvent.click(plusButton);
 
-      await waitFor(() => {
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
-        expect(plusButton).toBeDisabled();
-      });
+      // Verify loading state
+      expect(within(plusButton).getByRole('progressbar')).toBeInTheDocument();
+      expect(plusButton).toBeDisabled();
+      expect(
+        within(plusButton).queryByTestId('PlusOneIcon')
+      ).not.toBeInTheDocument();
 
       service.resolveOperation('updateGoal');
-      await incrementPromise;
 
       await waitFor(() => {
-        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(
+          within(plusButton).queryByRole('progressbar')
+        ).not.toBeInTheDocument();
         expect(plusButton).not.toBeDisabled();
+        expect(
+          within(plusButton).getByTestId('PlusOneIcon')
+        ).toBeInTheDocument();
       });
     });
 
